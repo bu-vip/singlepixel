@@ -1,0 +1,9 @@
+$circle-size: 50px;
+
+.sensor_color_circle {
+    width: $circle-size;
+    height: $circle-size;
+    -webkit-border-radius: $circle-size / 2;
+    -moz-border-radius: $circle-size / 2;
+    border-radius: $circle-size / 2;
+}
