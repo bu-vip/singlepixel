@@ -1,0 +1,27 @@
+package com.roeper.bu.urop.lib;
+
+import java.util.Hashtable;
+
+public class Group {
+	private String id;
+	private Hashtable<String, Sensor> sensors;
+	
+	public Group(String aId)
+	{
+		this.id = aId;
+	}
+	
+	public String getId() {
+		return id;
+	}
+	
+	public Hashtable<String, Sensor> getSensors()
+	{
+		return sensors;
+	}
+	
+	public void addSensor(Sensor aSensor)
+	{
+		sensors.put(aSensor.getId(), aSensor);
+	}
+}

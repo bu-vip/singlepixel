@@ -1,0 +1,8 @@
+broker:
+    hostname: tcp://localhost:1883
+    cliendId: dataRecorder
+    username: admin
+    password: password
+    topicPrefix: “”
+
+destinationFolder: /Users/Doug/Desktop

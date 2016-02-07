@@ -1,0 +1,6 @@
+package com.roeper.bu.urop.recorder;
+
+public class RecorderConfig {
+	@JsonProperty("broker")
+	private BrokerConfig brokerConfig;
+}

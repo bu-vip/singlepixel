@@ -1,0 +1,67 @@
+package com.roeper.bu.urop.lib;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.fasterxml.jackson.databind.ObjectWriter;
+
+public class SensorReadingWriter {
+
+	private ObjectWriter mapper;
+	private File destination;
+	private ConcurrentLinkedQueue<SensorReading> buffer = new ConcurrentLinkedQueue<SensorReading>();
+	private int bufferSize = 1000;
+
+	public SensorReadingWriter(File aDestination) {
+		this.destination = aDestination;
+	}
+
+	public SensorReadingWriter(File aDestination, int aBufferSize) {
+		this.destination = aDestination;
+		this.bufferSize = aBufferSize;
+	}
+
+	public void write(SensorReading aReading) {
+		buffer.add(aReading);
+	}
+
+	public void flush() {
+
+	}
+
+	private class WriteReadingsWorker implements Runnable {
+		public void run() {
+
+			int count = 0;
+
+			BufferedWriter bw = null;
+
+			try {
+				// APPEND MODE SET HERE
+				bw = new BufferedWriter(new FileWriter("checkbook.dat", true));
+
+				while (count < bufferSize && buffer.peek() != null) {
+					SensorReading next = buffer.poll();
+					String toWrite = mapper.writeValueAsString(next);
+					bw.write(toWrite);
+					bw.newLine();
+					count++;
+				}
+
+				bw.flush();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			} finally { // always close the file
+				if (bw != null)
+					try {
+						bw.close();
+					} catch (IOException ioe2) {
+						// just ignore it
+					}
+			} // end try/catch/finally
+		}
+	}
+}

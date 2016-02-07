@@ -1,0 +1,17 @@
+package com.roeper.bu.urop.lib;
+
+import java.util.List;
+import java.io.File;
+import java.util.LinkedList;
+
+public class SensorReadingWriter {
+	
+	private File destination;
+	private List<SensorReading> buffer = new LinkedList<SensorReading>();
+	
+	public SensorReadingWriter(File aDestination)
+	{
+		this.destination = aDestination;
+	}
+	
+}

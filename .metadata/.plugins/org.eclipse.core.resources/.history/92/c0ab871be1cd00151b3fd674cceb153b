@@ -1,0 +1,8 @@
+broker:
+    hostname: “localhost”
+    cliendId: “dataRecorder”
+    username: “admin”
+    password: “password”
+    topicPrefix: “”
+
+destinationFolder: “/Users/Doug/Desktop”
