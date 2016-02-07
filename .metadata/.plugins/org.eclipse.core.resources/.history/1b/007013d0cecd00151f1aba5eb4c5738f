@@ -1,8 +1,0 @@
-package com.roeper.bu.urop.lib;
-
-public class BrokerConfig {
-	private String hostname;
-	private String cliendId;
-	private String username;
-	private String password;
-}

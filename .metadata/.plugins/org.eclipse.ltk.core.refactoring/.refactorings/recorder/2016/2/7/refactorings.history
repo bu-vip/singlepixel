@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename local variable &apos;aConfig&apos; in &apos;com.roeper.bu.urop.recorder.RecorderConfig.RecorderConfig(...)&apos; to &apos;aBrokerConfigConfig&apos;&#x0A;- Original project: &apos;recorder&apos;&#x0A;- Original element: &apos;com.roeper.bu.urop.recorder.RecorderConfig.RecorderConfig(BrokerConfig, String).aConfig&apos;&#x0A;- Renamed element: &apos;aConfig&apos;&#x0A;- Update references to refactored element" description="Rename local variable &apos;aConfig&apos;" id="org.eclipse.jdt.ui.rename.local.variable" input="/src\/main\/java&lt;com.roeper.bu.urop.recorder{RecorderConfig.java[RecorderConfig~RecorderConfig~QBrokerConfig;~QString;@aConfig!328!347!341!347!QBrokerConfig;!0!true" name="aBrokerConfigConfig" references="true" stamp="1454872585167" version="1.0"/>
-</session>
