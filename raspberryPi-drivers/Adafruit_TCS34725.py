@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import smbus
 import time
 from Adafruit_I2C import Adafruit_I2C
@@ -92,7 +91,7 @@ class TCS34725:
 
     def __readU16Rev(self, reg):
         return self.i2c.readU16Rev(self.__TCS34725_COMMAND_BIT | reg)
-    
+
     def __write8(self, reg, value):
         self.i2c.write8(self.__TCS34725_COMMAND_BIT | reg, value & 0xff)
 
@@ -171,7 +170,7 @@ doing anything else)"
         # Set a delay for the integration time
         delay = self.__integrationTimeDelay.get(self.integrationTime)
         time.sleep(delay)
-        print "Running GetRawData"
+        print ("Running GetRawData")
         return color
     '''
     def readList2(self, reg, length):
@@ -199,7 +198,7 @@ doing anything else)"
         #time.sleep(delay)
         #print colors
         return color
-    
+
     def setInterrupt(self, int):
         r = self.__readU8(self.__TCS34725_ENABLE)
 
