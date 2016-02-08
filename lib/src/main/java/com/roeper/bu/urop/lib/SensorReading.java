@@ -1,7 +1,8 @@
 package com.roeper.bu.urop.lib;
 
-public class SensorReading {
-	
+public class SensorReading
+{
+
 	private String groupId;
 	private String sensorId;
 	private int red;
@@ -10,13 +11,20 @@ public class SensorReading {
 	private int white;
 	private int time1;
 	private int time2;
-	
+
 	protected SensorReading()
 	{
-		
+
 	}
-	
-	public SensorReading(String aGroupId, String aSensorId, int aRed, int aGreen, int aBlue, int aWhite, int aTime1, int aTime2)
+
+	public SensorReading(	String aGroupId,
+							String aSensorId,
+							int aRed,
+							int aGreen,
+							int aBlue,
+							int aWhite,
+							int aTime1,
+							int aTime2)
 	{
 		this.groupId = aGroupId;
 		this.sensorId = aSensorId;
@@ -28,35 +36,48 @@ public class SensorReading {
 		this.time2 = aTime2;
 	}
 
-	public String getGroupId() {
+	public String getGroupId()
+	{
 		return groupId;
 	}
 
-	public String getSensorId() {
+	public String getSensorId()
+	{
 		return sensorId;
 	}
 
-	public int getRed() {
+	public int getRed()
+	{
 		return red;
 	}
 
-	public int getGreen() {
+	public int getGreen()
+	{
 		return green;
 	}
 
-	public int getBlue() {
+	public int getBlue()
+	{
 		return blue;
 	}
 
-	public int getWhite() {
+	public int getWhite()
+	{
 		return white;
 	}
 
-	public int getTime1() {
+	public int getTime1()
+	{
 		return time1;
 	}
 
-	public int getTime2() {
+	public int getTime2()
+	{
 		return time2;
+	}
+
+	public String getPayload()
+	{
+		return red + ", " + green + ", " + blue + ", " + white + ", " + time1 + ", " + time2;
 	}
 }
