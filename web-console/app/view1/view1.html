@@ -1,9 +1,16 @@
-<form ng-submit="connect()">
-  Hostname: <input type="text" ng-model="hostname" name="hostname" />
-  Port: <input type="text" ng-model="port" name="port"/>
-  Client Id: <input type="text" ng-model="clientId" name="clientId" />
-  User: <input type="text" ng-model="username" name="username" />
-  Password: <input type="text" ng-model="password" name="password" />
-  Prefix: <input type="text" ng-model="prefix" name="prefix" />
-  <input type="submit" value="Connect" />
-</form>
+<div ng-show="!connected">
+    <form ng-submit="connect()">
+        Hostname:
+        <input type="text" ng-model="hostname" name="hostname" /> Port:
+        <input type="text" ng-model="port" name="port" /> Client Id:
+        <input type="text" ng-model="clientId" name="clientId" /> User:
+        <input type="text" ng-model="username" name="username" /> Password:
+        <input type="text" ng-model="password" name="password" /> Prefix:
+        <input type="text" ng-model="prefix" name="prefix" />
+        <input type="submit" value="Connect" />
+    </form>
+</div>
+
+<div ng-show="connected">
+    <p>Connected</p>
+</div>

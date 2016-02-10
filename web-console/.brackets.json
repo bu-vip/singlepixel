@@ -1,0 +1,16 @@
+{
+    "sass.enabled": false,
+    "sass.compiler": "libsass",
+    "path": {
+        "scss/main.scss": {
+            "sass.enabled": true,
+            "sass.options": {
+                "outputDir": "../app/css/",
+                "includePaths": [],
+                "sourceComments": true,
+                "outputStyle": "nested"
+            },
+            "linting.collapsed": false
+        }
+    }
+}
