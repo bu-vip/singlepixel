@@ -1,15 +1,13 @@
 var sensorService = angular.module('sensorService', [])
 
-sensorService.factory('SensorService', [function () {
+sensorService.factory('SensorService', ['$rootScope', "$timeout", function ($rootScope, $timeout) {
     var service = {
         public: {
             groups: {},
-            isConnected: function() { return service.connected; }
-        },
-        onConnectListeners: {},
-        onDisconnectListeners: {},
-        onUpdateListeners: {},
-        connected: false
+            state: {
+                connected: false
+            }
+        }
     }
 
     service.public.connect = function (aHostname, aPort, aClientId, aUser, aPass, aPrefix) {
@@ -43,18 +41,11 @@ sensorService.factory('SensorService', [function () {
         // called when the client connects
         function onConnect() {
             // Once a connection has been made, make a subscription and send a message.
-            console.log('onConnect')
             service.client.subscribe(service.destination)
-            service.connected = true;
-            //call all of the onUpdateListeners
-            for (var listener in service.onConnectListeners) {
-                service.onConnectListeners[listener]();
-            }
-            /*
-            message = new Paho.MQTT.Message("Hello")
-            message.destinationName = "/World"
-            client.send(message)
-            */
+            service.public.state.connected = true;
+            //empty function causes a digest
+            //effectively updating all clients
+            $timeout(function () {});
         }
 
         // called when a message arrives
@@ -136,10 +127,9 @@ sensorService.factory('SensorService', [function () {
                                 sensor.fpsCounter = 0;
                             }
 
-                            //call all of the onUpdateListeners
-                            for (var listener in service.onUpdateListeners) {
-                                service.onUpdateListeners[listener]();
-                            }
+                            //empty function causes a digest
+                            //effectively updating all clients
+                            $timeout(function () {});
                         }
                     } else {
                         console.log("Received reading without 'sensor' present at the correct level")
@@ -157,25 +147,17 @@ sensorService.factory('SensorService', [function () {
             if (responseObject.errorCode !== 0) {
                 console.log('onConnectionLost:' + responseObject.errorMessage)
             }
-            service.connected = false;
-            //call all of the onUpdateListeners
-            for (var listener in service.onDisconnectListeners) {
-                service.onDisconnectListeners[listener]();
-            }
+            service.public.state.connected = false;
+            service.public.groups = {};
+            //empty function causes a digest
+            //effectively updating all clients
+            $timeout(function () {});
         }
     }
 
-    service.public.addOnConnectListener = function (aName, aCallback) {
-        service.onConnectListeners[aName] = aCallback;
+    service.public.disconnect = function () {
+        service.client.disconnect();
     }
-
-    service.public.addOnDisconnectListener = function (aName, aCallback) {
-        service.onDisconnectListeners[aName] = aCallback;
-    }
-
-    service.public.addOnUpdateListener = function (aName, aCallback) {
-        service.onUpdateListeners[aName] = aCallback;
-    };
 
     return service.public
 }])

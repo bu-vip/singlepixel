@@ -1,7 +1,7 @@
 
 <div ng-repeat="group in groups" class="col-xs-12">
     <h1>Group {{group.id}}</h1>
-    <div ng-repeat="sensor in group.sensors" class="col-xs-6">
+    <div ng-repeat="sensor in group.sensors" class="col-xs-2 sensor_panel">
         <h2>Sensor {{sensor.id}}</h2>
         <div class="sensor_color_circle" ng-style="{ 'background': sensor.color }"></div>
         <p>Value {{sensor.value}}</p>

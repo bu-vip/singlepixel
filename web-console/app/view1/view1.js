@@ -20,18 +20,10 @@ angular.module('myApp.view1', ['ngRoute', 'sensorService'])
             sensorService.connect($scope.hostname, $scope.port, $scope.clientId, $scope.username, $scope.password, $scope.prefix);
         }
     }
+    
+    $scope.disconnect = function () {
+        sensorService.disconnect();
+    }
 
-    $scope.connected = sensorService.isConnected();
-    sensorService.addOnConnectListener('view1', function () {
-        $scope.$apply(function () {
-            $scope.connected = true;
-        });
-    });
-
-    sensorService.addOnDisconnectListener('view1', function () {
-        $scope.$apply(function () {
-            $scope.connected = false;
-        });
-    });
-
+    $scope.state = sensorService.state;
 }]);
