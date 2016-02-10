@@ -32,13 +32,12 @@ public class SensorReadingWriter
 	private AtomicBoolean done = new AtomicBoolean(false);
 
 	@Inject
-	protected SensorReadingWriter(	ObjectMapper aMapper,
-								@Assisted File aDestination)
+	protected SensorReadingWriter(ObjectMapper aMapper, @Assisted File aDestination)
 	{
 		this.mapper = aMapper;
 		this.destination = aDestination;
 	}
-	
+
 	public void open()
 	{
 		(new Thread(new WriteReadingsWorker())).start();
@@ -56,15 +55,18 @@ public class SensorReadingWriter
 		}
 	}
 
-	public void flush()
+	public void close()
 	{
-		if (this.buffer != null)
+		if (!done.get())
 		{
-			List<SensorReading> toWrite = this.buffer;
-			this.buffer = null;
-			writeJobs.add(toWrite);
+			if (this.buffer != null)
+			{
+				List<SensorReading> toWrite = this.buffer;
+				this.buffer = null;
+				writeJobs.add(toWrite);
+			}
+			done.set(true);
 		}
-		done.set(true);
 	}
 
 	private class WriteReadingsWorker implements Runnable
@@ -80,8 +82,7 @@ public class SensorReadingWriter
 				{
 					List<SensorReading> readings = writeJobs.take();
 					// APPEND MODE SET HERE
-					bw = new BufferedWriter(new FileWriter(	destination,
-															true));
+					bw = new BufferedWriter(new FileWriter(destination, true));
 
 					for (SensorReading reading : readings)
 					{

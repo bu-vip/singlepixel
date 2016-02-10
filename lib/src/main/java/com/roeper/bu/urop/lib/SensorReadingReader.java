@@ -31,23 +31,16 @@ public class SensorReadingReader implements Iterator<SensorReading>
 	private Optional<SensorReading> next;
 
 	@Inject
-	protected SensorReadingReader(	ObjectMapper aMapper,
-									@Assisted File aInputFile)
+	protected SensorReadingReader(ObjectMapper aMapper, @Assisted File aInputFile)
 	{
 		this.mapper = aMapper;
 		this.inputFile = aInputFile;
 	}
 
-	public void open()
+	public void open() throws FileNotFoundException
 	{
-		try
-		{
-			bufferedReader = new BufferedReader(new FileReader(inputFile));
-		}
-		catch (FileNotFoundException ex)
-		{
-			ex.printStackTrace();
-		}
+		bufferedReader = new BufferedReader(new FileReader(inputFile));
+		next = readNext();
 	}
 
 	public boolean hasNext()
@@ -61,17 +54,17 @@ public class SensorReadingReader implements Iterator<SensorReading>
 		next = readNext();
 		return current;
 	}
-	
+
 	private Optional<SensorReading> readNext()
 	{
 		Optional<SensorReading> optRead = Optional.absent();
 		try
 		{
-			//get next line
+			// get next line
 			String line = bufferedReader.readLine();
 			if (line != null)
 			{
-				//parse line if read
+				// parse line if read
 				SensorReading reading = this.mapper.readValue(line, SensorReading.class);
 				optRead = Optional.of(reading);
 				linesReadCount++;
@@ -87,7 +80,7 @@ public class SensorReadingReader implements Iterator<SensorReading>
 			e.printStackTrace();
 			throw new RuntimeException("Error reading file");
 		}
-		
+
 		return optRead;
 	}
 

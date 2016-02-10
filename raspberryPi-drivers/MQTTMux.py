@@ -3,7 +3,7 @@
 import paho.mqtt.client as mqtt
 from SensorReader import SensorReader
 
-MQTT_HOST = "localhost"
+MQTT_HOST = "192.168.1.246"
 MQTT_PORT = 1883
 MQTT_USER = "admin"
 MQTT_PASS = "password"
@@ -26,10 +26,13 @@ def main():
 
         # process sensor data
         try:
+            print ("Initializing sensors")
             # create and init sensor reader
             sensor_reader = SensorReader()
             sensor_reader.initialize()
+            print ("Initialization complete")
 
+            print ("Streaming data")
             while True:
                 #read sensor data
                 data = sensor_reader.ReadSensors();

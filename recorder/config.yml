@@ -4,4 +4,4 @@ broker:
     password: password
     topicPrefix:
 
-destinationFolder: /Users/Doug/Desktop
+destinationFolder: /home/doug/Desktop

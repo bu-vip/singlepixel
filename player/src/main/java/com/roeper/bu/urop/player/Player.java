@@ -1,5 +1,8 @@
 package com.roeper.bu.urop.player;
 
+import java.io.FileNotFoundException;
+import java.util.Date;
+
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -44,18 +47,17 @@ public class Player
 		final Player recorder = injector.getInstance(Player.class);
 
 		// add shutdown hook
-		Runtime	.getRuntime()
-				.addShutdownHook(new Thread()
-				{
-					@Override
-					public void run()
-					{
-						recorder.stop();
-					}
-				});
+		Runtime.getRuntime().addShutdownHook(new Thread()
+		{
+			@Override
+			public void run()
+			{
+				recorder.stop();
+			}
+		});
 
 		// start recorder
-		recorder.start();
+		recorder.play();
 	}
 
 	final Logger logger = LoggerFactory.getLogger(Player.class);
@@ -64,8 +66,7 @@ public class Player
 	private String topicPrefix;
 
 	@Inject
-	protected Player(	SensorReadingReader aReader,
-						MqttClient aClient,
+	protected Player(	SensorReadingReader aReader, MqttClient aClient,
 						@Named("topicPrefix") String aTopicPrefix)
 	{
 		this.reader = aReader;
@@ -73,33 +74,68 @@ public class Player
 		this.topicPrefix = aTopicPrefix;
 	}
 
-	public void start()
+	public void play()
 	{
-		this.reader.open();
-
 		try
 		{
+			this.reader.open();
+
 			MqttConnectOptions connOpts = new MqttConnectOptions();
 			connOpts.setCleanSession(true);
 			client.connect(connOpts);
 			logger.info("Successfully connected to broker.");
 
-			//TODO replay with time
-			while (this.reader.hasNext())
+			logger.info("Playing...");
+			if (this.reader.hasNext())
 			{
-				SensorReading next = this.reader.next();
-				String topic = this.topicPrefix + "/group/" + next.getGroupId() + "/sensor/" + next.getSensorId();
-				String payload = next.getPayload();
-				MqttMessage message = new MqttMessage(payload.getBytes());
-				message.setQos(2);
-				client.publish(topic, message);
+				// publish first one
+				SensorReading first = this.reader.next();
+				publishReading(first);
+				Date lastTime = first.getReceived();
+
+				while (this.reader.hasNext())
+				{
+					SensorReading next = this.reader.next();
+
+					// wait for time in between readings
+					long millisecondsBetween = next.getReceived().getTime() - lastTime.getTime();
+					lastTime = next.getReceived();
+					Thread.sleep(millisecondsBetween);
+
+					// publish the reading
+					publishReading(next);
+				}
 			}
+
+			logger.info("Done");
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
 		}
 		catch (MqttException me)
 		{
 			logger.error("An error occured connecting to the broker");
 			me.printStackTrace();
 		}
+		catch (FileNotFoundException ea)
+		{
+			logger.error("The input file was not found");
+			ea.printStackTrace();
+		}
+		finally
+		{
+			this.stop();
+		}
+	}
+
+	private void publishReading(SensorReading aReading) throws MqttException
+	{
+		String topic = this.topicPrefix + "/group/" + aReading.getGroupId() + "/sensor/" + aReading.getSensorId();
+		String payload = aReading.getPayload();
+		MqttMessage message = new MqttMessage(payload.getBytes());
+		message.setQos(2);
+		client.publish(topic, message);
 	}
 
 	public void stop()
@@ -108,7 +144,10 @@ public class Player
 
 		try
 		{
-			this.client.disconnect();
+			if (this.client.isConnected())
+			{
+				this.client.disconnect();
+			}
 		}
 		catch (MqttException e)
 		{

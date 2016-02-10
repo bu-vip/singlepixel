@@ -1,5 +1,7 @@
 package com.roeper.bu.urop.recorder;
 
+import java.util.Date;
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -19,10 +21,8 @@ import com.roeper.bu.urop.lib.SensorReadingWriter;
 
 public class Recorder implements MqttCallback
 {
-
 	public static void main(String args[]) throws Exception
 	{
-
 		String configFile = "config.yml";
 		if (args.length == 1)
 		{
@@ -48,15 +48,14 @@ public class Recorder implements MqttCallback
 		final Recorder recorder = injector.getInstance(Recorder.class);
 
 		// add shutdown hook
-		Runtime	.getRuntime()
-				.addShutdownHook(new Thread()
-				{
-					@Override
-					public void run()
-					{
-						recorder.stop();
-					}
-				});
+		Runtime.getRuntime().addShutdownHook(new Thread()
+		{
+			@Override
+			public void run()
+			{
+				recorder.stop();
+			}
+		});
 
 		// start recorder
 		recorder.start();
@@ -69,8 +68,7 @@ public class Recorder implements MqttCallback
 	private final String topicPrefix;
 
 	@Inject
-	protected Recorder(	SensorReadingWriter aWriter,
-						MqttClient aClient,
+	protected Recorder(	SensorReadingWriter aWriter, MqttClient aClient,
 						@Named("topicPrefix") String aTopicPrefix)
 	{
 		this.writer = aWriter;
@@ -93,24 +91,29 @@ public class Recorder implements MqttCallback
 
 			// subscribe to receive sensor readings
 			String subscribeDest = this.topicPrefix + "/#";
-			logger.info("Subscribing to: {}",
-						subscribeDest);
+			logger.info("Subscribing to: {}", subscribeDest);
 			client.subscribe(subscribeDest);
 		}
 		catch (MqttException me)
 		{
 			logger.error("An error occured connecting to the broker");
 			me.printStackTrace();
+			this.stop();
 		}
 	}
 
 	public void stop()
 	{
 		logger.info("Stopping...");
-		writer.flush();
+
+		writer.close();
+
 		try
 		{
-			client.disconnect();
+			if (client.isConnected())
+			{
+				client.disconnect();
+			}
 		}
 		catch (MqttException e)
 		{
@@ -121,7 +124,7 @@ public class Recorder implements MqttCallback
 	public void connectionLost(Throwable arg0)
 	{
 		logger.info("Lost connection. All data collected will be saved");
-		writer.flush();
+		this.stop();
 	}
 
 	public void deliveryComplete(IMqttDeliveryToken arg0)
@@ -129,8 +132,7 @@ public class Recorder implements MqttCallback
 
 	}
 
-	public void messageArrived(	String aTopic,
-								MqttMessage message) throws Exception
+	public void messageArrived(String aTopic, MqttMessage message) throws Exception
 	{
 		String payload = new String(message.getPayload());
 		// remove prefix
@@ -150,8 +152,7 @@ public class Recorder implements MqttCallback
 			if (readings.length != 6)
 			{
 				// log invalid sensor reading
-				logger.warn("Recevied an invalid sensor reading. Topic: {} Payload: {}",
-							aTopic,
+				logger.warn("Recevied an invalid sensor reading. Topic: {} Payload: {}", aTopic,
 							payload);
 			}
 			else
@@ -164,14 +165,8 @@ public class Recorder implements MqttCallback
 					int white = Integer.parseInt(readings[3]);
 					int time1 = Integer.parseInt(readings[4]);
 					int time2 = Integer.parseInt(readings[5]);
-					SensorReading reading = new SensorReading(	groupId,
-																sensorId,
-																red,
-																green,
-																blue,
-																white,
-																time1,
-																time2);
+					SensorReading reading = new SensorReading(	groupId, sensorId, red, green, blue,
+																white, time1, time2, new Date());
 					writer.write(reading);
 				}
 				catch (NumberFormatException e)
@@ -179,17 +174,14 @@ public class Recorder implements MqttCallback
 					e.printStackTrace();
 					// log invalid number
 					logger.warn("An error occured processing a sensor reading. Topic: {} Payload: {}",
-								aTopic,
-								payload);
+								aTopic, payload);
 				}
 			}
 		}
 		else
 		{
 			// log invalid topic
-			logger.warn("Recevied an invalid topic. Topic: {} Payload: {}",
-						aTopic,
-						payload);
+			logger.warn("Recevied an invalid topic. Topic: {} Payload: {}", aTopic, payload);
 		}
 	}
 }

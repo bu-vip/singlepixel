@@ -51,7 +51,7 @@ sensorService.factory('SensorService', [ function () {
 
     // called when a message arrives
     function onMessageArrived (message) {
-      console.log('onMessageArrived:' + message.payloadString)
+      //console.log('onMessageArrived:' + message.payloadString)
 
       // topic example:
       //    /<prefix>/group/<group-id>/sensor/<sensor-id>
@@ -87,8 +87,11 @@ sensorService.factory('SensorService', [ function () {
               // add it
               service.public.groups[groupId].sensors[sensorId] = {
                 id: sensorId,
-                value: [0, 0, 0, 0],
-                color: "rgb(0, 0, 0)"
+                value: [0, 0, 0, 0, 0, 0],
+                color: "rgb(0, 0, 0)",
+                  fpsStartTime: (new Date()).getTime(),
+                  fpsCounter: 0,
+                  fps: 0.0
               }
             }
             // get sensor
@@ -99,7 +102,7 @@ sensorService.factory('SensorService', [ function () {
             // e.g. "123, 456, 789, 149"
             var messageContents = message.payloadString.split(',')
             // check the values are valid
-            if (messageContents.length != 4) {
+            if (messageContents.length != 6) {
               console.log('Invalid sensor reading size')
             } else {
               // convert to number array
@@ -108,10 +111,23 @@ sensorService.factory('SensorService', [ function () {
                 numArray.push(Number(messageContents[i]))
               }
               sensor.value = numArray
-              var maxVal = 255.0;
-              sensor.color = "rgb(" + (numArray[0] / maxVal * 255);
-              sensor.color += ", " + (numArray[1] / maxVal * 255);
-              sensor.color += ", " + (numArray[2] / maxVal * 255) + ")";
+              var maxVal = 10000.0;
+              sensor.color = "rgb(" + Math.floor(numArray[0] / maxVal * 255);
+              sensor.color += ", " + Math.floor(numArray[1] / maxVal * 255);
+              sensor.color += ", " + Math.floor(numArray[2] / maxVal * 255) + ")";
+                
+                sensor.fpsCounter++;
+                
+                var fpsWindow = 100;
+                if (sensor.fpsCounter > fpsWindow)
+                    {
+                        var d = new Date();
+                        var endTime = d.getTime(); 
+                        var secondsElapsed = (endTime - sensor.fpsStartTime) / 1000.0; //time is in milliseconds
+                        sensor.fps = fpsWindow / secondsElapsed;
+                        sensor.fpsStartTime = (new Date()).getTime();
+                        sensor.fpsCounter = 0;
+                    }
 
               //call all of the onUpdateListeners
               for (var listener in service.onUpdateListeners)

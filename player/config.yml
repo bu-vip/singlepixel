@@ -4,4 +4,4 @@ broker:
     password: password
     topicPrefix:
 
-sourceFilePath: /Users/Doug/Desktop/take.txt
+sourceFilePath: /home/doug/Desktop/take.txt

@@ -1,8 +1,11 @@
 package com.roeper.bu.urop.lib;
 
+import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class SensorReading
 {
-
 	private String groupId;
 	private String sensorId;
 	private int red;
@@ -11,6 +14,7 @@ public class SensorReading
 	private int white;
 	private int time1;
 	private int time2;
+	private Date received;
 
 	protected SensorReading()
 	{
@@ -24,7 +28,8 @@ public class SensorReading
 							int aBlue,
 							int aWhite,
 							int aTime1,
-							int aTime2)
+							int aTime2,
+							Date aReceived)
 	{
 		this.groupId = aGroupId;
 		this.sensorId = aSensorId;
@@ -34,6 +39,7 @@ public class SensorReading
 		this.white = aWhite;
 		this.time1 = aTime1;
 		this.time2 = aTime2;
+		this.received = aReceived;
 	}
 
 	public String getGroupId()
@@ -75,7 +81,13 @@ public class SensorReading
 	{
 		return time2;
 	}
+	
+	public Date getReceived()
+	{
+		return received;
+	}
 
+	@JsonIgnore
 	public String getPayload()
 	{
 		return red + ", " + green + ", " + blue + ", " + white + ", " + time1 + ", " + time2;
