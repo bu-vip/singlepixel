@@ -1,10 +1,10 @@
-/* line 1, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_view1.scss */
+/* line 1, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_configView.scss */
 .form-connect {
   max-width: 330px;
   padding: 15px;
   margin: 0 auto; }
 
-/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_view1.scss */
+/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_configView.scss */
 .form-connect .form-control {
   position: relative;
   height: auto;
@@ -14,7 +14,7 @@
   padding: 10px;
   font-size: 16px; }
 
-/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_view2.scss */
+/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_rawDataView.scss */
 .sensor_color_circle {
   width: 150px;
   height: 150px;

@@ -1,15 +1,15 @@
 'use strict';
 
-angular.module('myApp.view1', ['ngRoute', 'sensorService'])
+angular.module('myApp.configView', ['ngRoute', 'sensorService'])
 
 .config(['$routeProvider', function ($routeProvider) {
-    $routeProvider.when('/view1', {
-        templateUrl: 'view1/view1.html',
-        controller: 'View1Ctrl'
+    $routeProvider.when('/configView', {
+        templateUrl: 'configView/configView.html',
+        controller: 'configViewCtrl'
     });
 }])
 
-.controller('View1Ctrl', ['$scope', 'SensorService', function ($scope, sensorService) {
+.controller('configViewCtrl', ['$scope', 'SensorService', function ($scope, sensorService) {
     $scope.hostname = "localhost";
     $scope.port = "61614";
     $scope.clientId = "webConsole" + Math.floor((Math.random() * 100000) + 1);
