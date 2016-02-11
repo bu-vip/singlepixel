@@ -28,7 +28,7 @@ public class SensorReadingWriter
 	private File destination;
 	private List<SensorReading> buffer = new LinkedList<SensorReading>();
 	private LinkedBlockingQueue<List<SensorReading>> writeJobs = new LinkedBlockingQueue<List<SensorReading>>();
-	private int bufferSize = 1000;
+	private int bufferSize = 100;
 	private AtomicBoolean done = new AtomicBoolean(false);
 
 	@Inject

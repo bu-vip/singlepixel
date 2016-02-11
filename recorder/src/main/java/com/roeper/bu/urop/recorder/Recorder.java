@@ -159,12 +159,12 @@ public class Recorder implements MqttCallback
 			{
 				try
 				{
-					int red = Integer.parseInt(readings[0]);
-					int green = Integer.parseInt(readings[1]);
-					int blue = Integer.parseInt(readings[2]);
-					int white = Integer.parseInt(readings[3]);
-					int time1 = Integer.parseInt(readings[4]);
-					int time2 = Integer.parseInt(readings[5]);
+					int red = Integer.parseInt(readings[0].trim());
+					int green = Integer.parseInt(readings[1].trim());
+					int blue = Integer.parseInt(readings[2].trim());
+					int white = Integer.parseInt(readings[3].trim());
+					int time1 = Integer.parseInt(readings[4].trim());
+					int time2 = Integer.parseInt(readings[5].trim());
 					SensorReading reading = new SensorReading(	groupId, sensorId, red, green, blue,
 																white, time1, time2, new Date());
 					writer.write(reading);
