@@ -13,28 +13,22 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 
-public class SensorReadingReader implements Iterator<SensorReading>
+public class ObjectReader<T> implements Iterator<T>
 {
-	public interface Factory
-	{
-		SensorReadingReader create(File aInputFile);
-	}
-
-	final Logger logger = LoggerFactory.getLogger(SensorReadingReader.class);
+	final Logger logger = LoggerFactory.getLogger(ObjectReader.class);
 	private File inputFile;
 	private ObjectMapper mapper;
 	private long linesReadCount = 0;
 	private BufferedReader bufferedReader;
-	private Optional<SensorReading> next;
+	private Optional<T> next;
+	private Class<T> classVar;
 
-	@Inject
-	protected SensorReadingReader(ObjectMapper aMapper, @Assisted File aInputFile)
+	public ObjectReader(ObjectMapper aMapper, File aInputFile, Class<T> aClassVar) 
 	{
 		this.mapper = aMapper;
 		this.inputFile = aInputFile;
+		this.classVar = aClassVar;
 	}
 
 	public void open() throws FileNotFoundException
@@ -48,16 +42,16 @@ public class SensorReadingReader implements Iterator<SensorReading>
 		return next.isPresent();
 	}
 
-	public SensorReading next()
+	public T next()
 	{
-		SensorReading current = next.get();
+		T current = next.get();
 		next = readNext();
 		return current;
 	}
 
-	private Optional<SensorReading> readNext()
+	private Optional<T> readNext()
 	{
-		Optional<SensorReading> optRead = Optional.absent();
+		Optional<T> optRead = Optional.absent();
 		try
 		{
 			// get next line
@@ -65,7 +59,7 @@ public class SensorReadingReader implements Iterator<SensorReading>
 			if (line != null)
 			{
 				// parse line if read
-				SensorReading reading = this.mapper.readValue(line, SensorReading.class);
+				T reading = this.mapper.readValue(line, classVar);
 				optRead = Optional.of(reading);
 				linesReadCount++;
 			}

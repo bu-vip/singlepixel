@@ -6,12 +6,13 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
-import com.roeper.bu.urop.lib.SensorReadingReader;
+import com.roeper.bu.urop.lib.ObjectReader;
+import com.roeper.bu.urop.lib.SensorReading;
 
 public class PlayerModule extends AbstractModule
 {
@@ -26,10 +27,6 @@ public class PlayerModule extends AbstractModule
 	protected void configure()
 	{
 		bind(PlayerModuleConfig.class).toInstance(this.config);
-
-		install(new FactoryModuleBuilder()	.implement(	SensorReadingReader.class,
-		                                  	          SensorReadingReader.class)
-											.build(SensorReadingReader.Factory.class));
 	}
 
 	@Provides
@@ -55,9 +52,9 @@ public class PlayerModule extends AbstractModule
 	}
 	
 	@Provides
-	public SensorReadingReader getReader(SensorReadingReader.Factory aReaderFactor)
+	public ObjectReader<SensorReading> getReader(ObjectMapper aMapper)
 	{
-		return aReaderFactor.create(new File(this.config.getSourceFilePath()));
+		return new ObjectReader<SensorReading>(aMapper, new File(this.config.getSourceFilePath()), SensorReading.class);
 	}
 
 	@Provides

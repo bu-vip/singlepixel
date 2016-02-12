@@ -1,10 +1,9 @@
 package com.roeper.bu.urop.recorder;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.roeper.bu.urop.lib.BrokerConfig;
 
 public class RecorderModuleConfig {
-	@JsonProperty("broker")
+
 	private BrokerConfig brokerConfig;
 	
 	private String destinationFolder;

@@ -14,59 +14,66 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
+import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ConfigReader;
 import com.roeper.bu.urop.lib.SensorReading;
-import com.roeper.bu.urop.lib.SensorReadingReader;
+import com.roeper.bu.urop.lib.ObjectReader;
 
 public class Player
 {
 	public static void main(String args[]) throws Exception
 	{
-		String configFile = "config.yml";
-		if (args.length == 1)
+		if (args.length == 2)
 		{
-			configFile = args[0];
-		}
-
-		// get the config
-		PlayerModuleConfig config = null;
-		ConfigReader<PlayerModuleConfig> reader = new ConfigReader<PlayerModuleConfig>(PlayerModuleConfig.class);
-		try
-		{
-			config = reader.read(configFile);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			throw new RuntimeException("Error getting config");
-		}
-
-		Injector injector = Guice.createInjector(new PlayerModule(config));
-
-		// create recorder
-		final Player recorder = injector.getInstance(Player.class);
-
-		// add shutdown hook
-		Runtime.getRuntime().addShutdownHook(new Thread()
-		{
-			@Override
-			public void run()
+			// get the config
+			BrokerConfig brokerConfig = null;
+			ConfigReader<BrokerConfig> reader = new ConfigReader<BrokerConfig>(BrokerConfig.class);
+			try
 			{
-				recorder.stop();
+				brokerConfig = reader.read(args[0]);
 			}
-		});
+			catch (Exception e)
+			{
+				e.printStackTrace();
+				throw new RuntimeException("Error getting config");
+			}
 
-		// start recorder
-		recorder.play();
+			PlayerModuleConfig config = new PlayerModuleConfig(	brokerConfig,
+																args[1]);
+
+			Injector injector = Guice.createInjector(new PlayerModule(config));
+
+			// create recorder
+			final Player recorder = injector.getInstance(Player.class);
+
+			// add shutdown hook
+			Runtime	.getRuntime()
+					.addShutdownHook(new Thread()
+					{
+						@Override
+						public void run()
+						{
+							recorder.stop();
+						}
+					});
+
+			// start recorder
+			recorder.play();
+		}
+		else
+		{
+			System.out.println("Usage: <config-file> <input-file>");
+		}
 	}
 
 	final Logger logger = LoggerFactory.getLogger(Player.class);
-	private SensorReadingReader reader;
+	private ObjectReader<SensorReading> reader;
 	private MqttClient client;
 	private String topicPrefix;
 
 	@Inject
-	protected Player(	SensorReadingReader aReader, MqttClient aClient,
+	protected Player(	ObjectReader<SensorReading> aReader,
+						MqttClient aClient,
 						@Named("topicPrefix") String aTopicPrefix)
 	{
 		this.reader = aReader;
@@ -98,7 +105,8 @@ public class Player
 					SensorReading next = this.reader.next();
 
 					// wait for time in between readings
-					long millisecondsBetween = next.getReceived().getTime() - lastTime.getTime();
+					long millisecondsBetween = next	.getReceived()
+													.getTime() - lastTime.getTime();
 					lastTime = next.getReceived();
 					Thread.sleep(millisecondsBetween);
 
@@ -135,7 +143,8 @@ public class Player
 		String payload = aReading.getPayload();
 		MqttMessage message = new MqttMessage(payload.getBytes());
 		message.setQos(2);
-		client.publish(topic, message);
+		client.publish(	topic,
+						message);
 	}
 
 	public void stop()

@@ -13,26 +13,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 
-public class SensorReadingWriter
+public class ObjectWriter<T>
 {
-	public interface Factory
-	{
-		SensorReadingWriter create(File aDestination);
-	}
-
-	final Logger logger = LoggerFactory.getLogger(SensorReadingWriter.class);
+	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
 	private ObjectMapper mapper;
 	private File destination;
-	private List<SensorReading> buffer = new LinkedList<SensorReading>();
-	private LinkedBlockingQueue<List<SensorReading>> writeJobs = new LinkedBlockingQueue<List<SensorReading>>();
+	private List<T> buffer = new LinkedList<T>();
+	private LinkedBlockingQueue<List<T>> writeJobs = new LinkedBlockingQueue<List<T>>();
 	private int bufferSize = 100;
 	private AtomicBoolean done = new AtomicBoolean(false);
 
-	@Inject
-	protected SensorReadingWriter(ObjectMapper aMapper, @Assisted File aDestination)
+	public ObjectWriter(ObjectMapper aMapper, File aDestination)
 	{
 		this.mapper = aMapper;
 		this.destination = aDestination;
@@ -43,14 +35,14 @@ public class SensorReadingWriter
 		(new Thread(new WriteReadingsWorker())).start();
 	}
 
-	public void write(SensorReading aReading)
+	public void write(T aReading)
 	{
 		buffer.add(aReading);
 
 		if (buffer.size() > bufferSize)
 		{
-			List<SensorReading> toWrite = this.buffer;
-			this.buffer = new LinkedList<SensorReading>();
+			List<T> toWrite = this.buffer;
+			this.buffer = new LinkedList<T>();
 			writeJobs.add(toWrite);
 		}
 	}
@@ -61,7 +53,7 @@ public class SensorReadingWriter
 		{
 			if (this.buffer != null)
 			{
-				List<SensorReading> toWrite = this.buffer;
+				List<T> toWrite = this.buffer;
 				this.buffer = null;
 				writeJobs.add(toWrite);
 			}
@@ -80,11 +72,11 @@ public class SensorReadingWriter
 				BufferedWriter bw = null;
 				try
 				{
-					List<SensorReading> readings = writeJobs.take();
+					List<T> readings = writeJobs.take();
 					// APPEND MODE SET HERE
 					bw = new BufferedWriter(new FileWriter(destination, true));
 
-					for (SensorReading reading : readings)
+					for (T reading : readings)
 					{
 						String toWrite = mapper.writeValueAsString(reading);
 						bw.write(toWrite);

@@ -6,12 +6,13 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
-import com.roeper.bu.urop.lib.SensorReadingWriter;
+import com.roeper.bu.urop.lib.ObjectWriter;
+import com.roeper.bu.urop.lib.SensorReading;
 
 public class RecorderModule extends AbstractModule
 {
@@ -26,10 +27,6 @@ public class RecorderModule extends AbstractModule
 	protected void configure()
 	{
 		bind(RecorderModuleConfig.class).toInstance(this.config);
-
-		install(new FactoryModuleBuilder()	.implement(	SensorReadingWriter.class,
-														SensorReadingWriter.class)
-											.build(SensorReadingWriter.Factory.class));
 	}
 
 	@Provides
@@ -55,12 +52,12 @@ public class RecorderModule extends AbstractModule
 	}
 
 	@Provides
-	public SensorReadingWriter getWriter(SensorReadingWriter.Factory aFactory)
+	public ObjectWriter<SensorReading> getWriter(ObjectMapper aMapper)
 	{
 		// create the reading writer
 		String filename = "take-" + System.currentTimeMillis() + ".txt";
-		String destiantionFile = this.config.getDestinationFolder() + "/" + filename;
-		File destinationFile = new File(destiantionFile);
+		String destPath = this.config.getDestinationFolder() + "/" + filename;
+		File destinationFile = new File(destPath);
 		// create all necessary parent folders
 		if (destinationFile.getParentFile() != null)
 		{
@@ -68,7 +65,7 @@ public class RecorderModule extends AbstractModule
 							.mkdirs();
 		}
 
-		return aFactory.create(destinationFile);
+		return new ObjectWriter<SensorReading>(aMapper, destinationFile);
 	}
 	
 	@Provides
