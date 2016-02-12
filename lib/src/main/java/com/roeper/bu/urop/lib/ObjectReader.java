@@ -30,6 +30,8 @@ public class ObjectReader<T> implements Iterator<T>
 		this.inputFile = aInputFile;
 		this.classVar = aClassVar;
 	}
+	
+	
 
 	public void open() throws FileNotFoundException
 	{
@@ -55,13 +57,18 @@ public class ObjectReader<T> implements Iterator<T>
 		try
 		{
 			// get next line
-			String line = bufferedReader.readLine();
-			if (line != null)
+			String line;
+			while  ((line = bufferedReader.readLine()) != null)
 			{
 				// parse line if read
 				T reading = this.mapper.readValue(line, classVar);
 				optRead = Optional.of(reading);
 				linesReadCount++;
+				
+				if (optRead.isPresent())
+				{
+					break;
+				}
 			}
 		}
 		catch (JsonParseException ea)

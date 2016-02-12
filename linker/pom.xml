@@ -1,11 +1,10 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.roeper.bu.urop</groupId>
-	<artifactId>optitrack</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-
-	<properties>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.roeper.bu.urop</groupId>
+  <artifactId>linker</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  
+    <properties>
 		<jackson-2-version>2.6.4</jackson-2-version>
 	</properties>
 
@@ -14,31 +13,6 @@
 			<groupId>com.roeper.bu.urop</groupId>
 			<artifactId>lib</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.inject</groupId>
-			<artifactId>guice</artifactId>
-			<version>4.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.inject.extensions</groupId>
-			<artifactId>guice-assistedinject</artifactId>
-			<version>4.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>18.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>${jackson-2-version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>${jackson-2-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -89,7 +63,7 @@
 									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.roeper.bu.urop.optitrack.OptitrackCSVConverter</mainClass>
+									<mainClass>com.roeper.bu.urop.linker.Linker</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
