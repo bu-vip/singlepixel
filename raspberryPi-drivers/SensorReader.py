@@ -2,8 +2,6 @@ from time import sleep
 import time
 from Adafruit_TCS34725 import TCS34725
 import Adafruit_I2C
-import numpy
-'''import RobotRaconteur as RR'''
 import smbus
 time.ctime()
 
@@ -18,10 +16,24 @@ class SensorReader:
     DEVICE_REG_LEDOUT0 = 0x1d
     COLOR_SENSOR_ADDRESS = 0x29 #Color sensor address
 
-    def __init__(self):
+    def __init__(self, aIntegrationTime, aGain):
         self.muxes = []
         self.bus = smbus.SMBus(1)
-        pass
+        self.integration_time_ms = aIntegrationTime;
+        if (aIntegrationTime < 2.4 || aIntegrationTime > 612):
+            raise Error("Integration time not in range: [2.4, 612]")
+        self.integration_time_int = int(256 - aIntegrationTime / 2.4);
+        self.gain = aGain;
+        if aGain == 1:
+            self.gain_index = 0
+        elif aGain == 4:
+            self.gain_index = 1
+        elif aGain == 16:
+            self.gain_index = 2
+        elif aGain == 60:
+            self.gain_index = 3
+        else
+            raise Error("Gain not equal to: [1, 4, 16, 60]")
 
     def initialize(self):
         #Initialization routine
@@ -45,7 +57,7 @@ class SensorReader:
                         #bus.write_byte_data(m, SensorReader.DEVICE_REG_MODE1, x) #Choose sensor x on mux m
                         x = x*2
                         print ("initializing sensor at mux: ", hex(m), " channel: ", str(s))
-                        self.tcs = TCS34725(integrationTime=0xD5, gain=0x03) # 2.4 ms integration time, 60X amp
+                        self.tcs = TCS34725(integrationTime=self.integration_time_int, gain=self.gain_index) # 2.4 ms integration time, 60X amp
                         id = self.tcs.getID()
                         print (id)
                         if (id == 0x44):
