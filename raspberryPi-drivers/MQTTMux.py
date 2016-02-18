@@ -63,9 +63,7 @@ def main():
         while True:
             startTime = time.time()
             #read sensor data
-            print ("Polling sensors...")
             data = sensor_reader.ReadSensors();
-            print ("sending data...")
             # publish
             for muxId in range(0, len(data)):
                 muxData = data[muxId]
@@ -84,8 +82,7 @@ def main():
             # calculate the time we need to sleep to prevent over-polling the sensors
             endTime = time.time()
             duration = endTime - startTime
-            timeLeft = args.sensor_time - duration
-            print ("sleeping for", timeLeft)
+            timeLeft = (args.sensor_time / 1000.0) - duration
             if timeLeft > 0:
                 time.sleep(timeLeft)
             else:
