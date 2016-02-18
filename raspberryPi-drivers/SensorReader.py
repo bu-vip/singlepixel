@@ -20,7 +20,7 @@ class SensorReader:
         self.muxes = []
         self.bus = smbus.SMBus(1)
         self.integration_time_ms = aIntegrationTime;
-        if (aIntegrationTime < 2.4 || aIntegrationTime > 612):
+        if (aIntegrationTime < 2.4 or aIntegrationTime > 612):
             raise Error("Integration time not in range: [2.4, 612]")
         self.integration_time_int = int(256 - aIntegrationTime / 2.4);
         self.gain = aGain;
@@ -32,7 +32,7 @@ class SensorReader:
             self.gain_index = 2
         elif aGain == 60:
             self.gain_index = 3
-        else
+        else:
             raise Error("Gain not equal to: [1, 4, 16, 60]")
 
     def initialize(self):
