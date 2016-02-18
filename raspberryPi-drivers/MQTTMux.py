@@ -33,8 +33,8 @@ def arg_sensor_time(string):
 def main():
 
     parser = argparse.ArgumentParser(description='Send senor data over MQTT.')
-    parser.add_argument('-h', action="store", dest="mqtt_host", default="localhost", help='Location of the MQTT broker. Defaults to localhost.')
-    parser.add_argument('-p', action="store", dest="mqtt_port", default=1883, type=int, help='MQTT port for the broker. Defaults to 1883.')
+    parser.add_argument('--host', action="store", dest="mqtt_host", default="localhost", help='Location of the MQTT broker. Defaults to localhost.')
+    parser.add_argument('--port', action="store", dest="mqtt_port", default=1883, type=int, help='MQTT port for the broker. Defaults to 1883.')
     #parser.add_argument('--user', action="store", dest="mqtt_user", help="Username used to login to the broker.")
     #parser.add_argument('--pass', action="store", dest="mqtt_pass", help="Password used to login to the broker.")
     parser.add_argument('--topic', action="store", dest="mqtt_prefix", default="", help="Base topic to broadcast on. Defaults to none.")
