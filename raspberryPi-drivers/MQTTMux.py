@@ -63,7 +63,9 @@ def main():
         while True:
             startTime = time.time()
             #read sensor data
+            print ("Polling sensors...")
             data = sensor_reader.ReadSensors();
+            print ("sending data...")
             # publish
             for muxId in range(0, len(data)):
                 muxData = data[muxId]

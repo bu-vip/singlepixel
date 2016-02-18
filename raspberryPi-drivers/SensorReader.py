@@ -50,16 +50,16 @@ class SensorReader:
                                 self.bus.write_byte_data(m, SensorReader.DEVICE_REG_MODE1, x)
                                 self.mux_present[m - SensorReader.FIRST_MUX_ADDRESS] = True
 
-                                print("Mux present at: ", hex(m))
+                                #print("Mux present at: ", hex(m))
                         except (IOError):
-                                print  ("There's no mux at this address: ", hex(m))
+                                #print  ("There's no mux at this address: ", hex(m))
                                 self.mux_present[m - SensorReader.FIRST_MUX_ADDRESS] = False
                         #bus.write_byte_data(m, SensorReader.DEVICE_REG_MODE1, x) #Choose sensor x on mux m
                         x = x*2
-                        print ("initializing sensor at mux: ", hex(m), " channel: ", str(s))
+                        #print ("initializing sensor at mux: ", hex(m), " channel: ", str(s))
                         self.tcs = TCS34725(integrationTime=self.integration_time_int, gain=self.gain_index) # 2.4 ms integration time, 60X amp
                         id = self.tcs.getID()
-                        print (id)
+                        #print (id)
                         if (id == 0x44):
                                 self.sensor_present[m - SensorReader.FIRST_MUX_ADDRESS][s] = 1
                         else:
