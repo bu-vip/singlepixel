@@ -74,7 +74,7 @@ def main():
                     # non existant sensors will produce an empty list
                     if len(sensorData) == 6:
                         # topic for data: <prefix>/group/<group-id>/sensor/<sensor-id>
-                        topic = MQTT_PREFIX + "/group/" + str(muxId) + "/sensor/" + str(sensorId)
+                        topic = args.mqtt_prefix + "/group/" + str(muxId) + "/sensor/" + str(sensorId)
                         # payload is "R,G,B,W,t1,t2"
                         payload = str(sensorData[0]) + ", " + str(sensorData[1]) + ", " + str(sensorData[2])
                         payload += ", " + str(sensorData[3]) + ", " + str(sensorData[4]) + ", " + str(sensorData[5])
