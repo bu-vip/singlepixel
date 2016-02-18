@@ -25,9 +25,6 @@ def arg_sensor_time(string):
     if (intTime < 2.4 or intTime > 612):
         msg = "%r is not a value in range [2.4, 612] ms" % string
         raise argparse.ArgumentTypeError(msg)
-    # convert to code for sensors
-    # time = 256 - integrationtime / 2.4ms
-    value = int(256 - intTime / 2.4);
     return value
 
 def main():
