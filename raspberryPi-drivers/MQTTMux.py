@@ -21,8 +21,8 @@ def arg_sensor_gain(string):
         raise argparse.ArgumentTypeError(msg)
 
 def arg_sensor_time(string):
-    intTime = float(string)
-    if (intTime < 2.4 or intTime > 612):
+    value = float(string)
+    if (value < 2.4 or value > 612):
         msg = "%r is not a value in range [2.4, 612] ms" % string
         raise argparse.ArgumentTypeError(msg)
     return value
