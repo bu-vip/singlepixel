@@ -14,7 +14,7 @@ def on_message(client, userdata, msg):
 
 def arg_sensor_gain(string):
     value = int(string)
-    if value == 1 || value == 4 || value == 16 || value == 60
+    if (value == 1 || value == 4 || value == 16 || value == 60):
         return value
     else
         msg = "%r is not a value in range [1, 4]" % string
@@ -22,7 +22,7 @@ def arg_sensor_gain(string):
 
 def arg_sensor_time(string):
     intTime = float(string)
-    if intTime < 2.4 || intTime > 612
+    if (intTime < 2.4 || intTime > 612):
         msg = "%r is not a value in range [2.4, 612] ms" % string
         raise argparse.ArgumentTypeError(msg)
     # convert to code for sensors
