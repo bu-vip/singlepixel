@@ -85,6 +85,7 @@ def main():
             endTime = time.time()
             duration = endTime - startTime
             timeLeft = args.sensor_time - duration
+            print ("sleeping for", timeLeft)
             if timeLeft > 0:
                 time.sleep(timeLeft)
             else:
