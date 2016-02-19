@@ -35,7 +35,7 @@ class SensorReader:
         else:
             raise Error("Gain not equal to: [1, 4, 16, 60]")
         # calculate the max value the senors will return for the given integration time
-        self.max_sensor_val = max((256 - self.integration_time_int) * 1024, 65535)
+        self.max_sensor_val = min((256 - self.integration_time_int) * 1024, 65535)
 
     def initialize(self):
         #Initialization routine
@@ -161,15 +161,10 @@ class SensorReader:
                                     if (self.sensor_present[u][s2]):
                                             rgb = self.streamData() #Get sensor data
                                             # scale sensor rating to between 0->1.0
-                                            #sensorData = [  rgb['r'] / float(self.max_sensor_val), \
-                                            #                rgb['g'] / float(self.max_sensor_val), \
-                                            #                rgb['b'] / float(self.max_sensor_val), \
-                                            #                rgb['c'] / float(self.max_sensor_val), \
-                                            #                self.time_min(), self.time_sec()]
-                                            sensorData = [  rgb['r'], \
-                                                            rgb['g'], \
-                                                            rgb['b'], \
-                                                            rgb['c'], \
+                                            sensorData = [  rgb['r'] / float(self.max_sensor_val), \
+                                                            rgb['g'] / float(self.max_sensor_val), \
+                                                            rgb['b'] / float(self.max_sensor_val), \
+                                                            rgb['c'] / float(self.max_sensor_val), \
                                                             self.time_min(), self.time_sec()]
                                             x2 = x2*2
                                     else:
