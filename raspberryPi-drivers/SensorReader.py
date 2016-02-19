@@ -161,10 +161,15 @@ class SensorReader:
                                     if (self.sensor_present[u][s2]):
                                             rgb = self.streamData() #Get sensor data
                                             # scale sensor rating to between 0->1.0
-                                            sensorData = [  rgb['r'] / float(self.max_sensor_val), \
-                                                            rgb['g'] / float(self.max_sensor_val), \
-                                                            rgb['b'] / float(self.max_sensor_val), \
-                                                            rgb['c'] / float(self.max_sensor_val), \
+                                            #sensorData = [  rgb['r'] / float(self.max_sensor_val), \
+                                            #                rgb['g'] / float(self.max_sensor_val), \
+                                            #                rgb['b'] / float(self.max_sensor_val), \
+                                            #                rgb['c'] / float(self.max_sensor_val), \
+                                            #                self.time_min(), self.time_sec()]
+                                            sensorData = [  rgb['r'], \
+                                                            rgb['g'], \
+                                                            rgb['b'], \
+                                                            rgb['c'], \
                                                             self.time_min(), self.time_sec()]
                                             x2 = x2*2
                                     else:

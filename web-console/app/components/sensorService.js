@@ -35,11 +35,15 @@ sensorService.factory('SensorService', ['$rootScope', "$timeout", function ($roo
     }
 
     Sensor.prototype.addReading = function (aReading) {
-        var maxVal = 10000.0;
+        this.value = aReading;
+
+        //convert reading to RGB color
+        var maxVal = 1.0;
         this.color = "rgb(" + Math.floor(aReading[0] / maxVal * 255);
         this.color += ", " + Math.floor(aReading[1] / maxVal * 255);
         this.color += ", " + Math.floor(aReading[2] / maxVal * 255) + ")";
 
+        //monitor FPS
         this.fpsCounter++;
         var fpsWindow = 100;
         if (this.fpsCounter > fpsWindow) {
