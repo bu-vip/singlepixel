@@ -92,4 +92,10 @@ public class SensorReading
 	{
 		return red + ", " + green + ", " + blue + ", " + white + ", " + time1 + ", " + time2;
 	}
+	
+	@JsonIgnore
+	public double getLuminance()
+	{
+		return 0.2989 * red + 0.587 * green + 0.114 * blue;
+	}
 }
