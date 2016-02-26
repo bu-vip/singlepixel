@@ -8,10 +8,10 @@ public class SensorReading
 {
 	private String groupId;
 	private String sensorId;
-	private int red;
-	private int green;
-	private int blue;
-	private int white;
+	private double red;
+	private double green;
+	private double blue;
+	private double white;
 	private int time1;
 	private int time2;
 	private Date received;
@@ -23,10 +23,10 @@ public class SensorReading
 
 	public SensorReading(	String aGroupId,
 							String aSensorId,
-							int aRed,
-							int aGreen,
-							int aBlue,
-							int aWhite,
+							double aRed,
+							double aGreen,
+							double aBlue,
+							double aWhite,
 							int aTime1,
 							int aTime2,
 							Date aReceived)
@@ -52,22 +52,22 @@ public class SensorReading
 		return sensorId;
 	}
 
-	public int getRed()
+	public double getRed()
 	{
 		return red;
 	}
 
-	public int getGreen()
+	public double getGreen()
 	{
 		return green;
 	}
 
-	public int getBlue()
+	public double getBlue()
 	{
 		return blue;
 	}
 
-	public int getWhite()
+	public double getWhite()
 	{
 		return white;
 	}

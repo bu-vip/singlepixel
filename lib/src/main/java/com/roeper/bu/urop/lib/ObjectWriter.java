@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,6 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/** Writes objects to file in JSON. File contains an array of JSON objects.
+ * 
+ * @author doug
+ *
+ * @param <T> - The type of object to write.
+ */
 public class ObjectWriter<T>
 {
 	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
@@ -66,11 +73,20 @@ public class ObjectWriter<T>
 
 		public void run()
 		{
-
-			while (!done.get() || !writeJobs.isEmpty())
+			BufferedWriter bw = null;
+			RandomAccessFile randomAccessWriter = null;
+			try
 			{
-				BufferedWriter bw = null;
-				try
+				// creates a new file
+				bw = new BufferedWriter(new FileWriter(destination, false));
+				// write [ for the start of the array
+				bw.write("[");
+				bw.flush();
+
+				// close, will be reopened in append mode
+				bw.close();
+
+				while (!done.get() || !writeJobs.isEmpty())
 				{
 					List<T> readings = writeJobs.take();
 					// APPEND MODE SET HERE
@@ -79,32 +95,57 @@ public class ObjectWriter<T>
 					for (T reading : readings)
 					{
 						String toWrite = mapper.writeValueAsString(reading);
-						bw.write(toWrite);
+						bw.write(toWrite + ",");
 						bw.newLine();
 					}
 
 					bw.flush();
 				}
-				catch (InterruptedException e)
+				// close buffered writer
+				bw.close();
+				bw = null;
+
+				// create a random access writer to overwrite the end of the
+				// file
+				randomAccessWriter = new RandomAccessFile(destination, "rw");
+				// Set write pointer to the end of the file
+				randomAccessWriter.seek(randomAccessWriter.length() - 2);
+				// overwrite the last "," with a "]"
+				randomAccessWriter.write(']');
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+			catch (IOException ioe)
+			{
+				ioe.printStackTrace();
+				throw new RuntimeException("Error writing file");
+			}
+			finally
+			{
+				if (bw != null)
 				{
-					e.printStackTrace();
+					try
+					{
+						bw.close();
+					}
+					catch (IOException ioe2)
+					{
+					}
 				}
-				catch (IOException ioe)
+				if (randomAccessWriter != null)
 				{
-					ioe.printStackTrace();
-				}
-				finally
-				{
-					if (bw != null)
-						try
-						{
-							bw.close();
-						}
-						catch (IOException ioe2)
-						{
-						}
+					try
+					{
+						randomAccessWriter.close();
+					}
+					catch (IOException ioe2)
+					{
+					}
 				}
 			}
 		}
+
 	}
 }
