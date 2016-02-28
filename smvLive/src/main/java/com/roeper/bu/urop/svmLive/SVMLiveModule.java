@@ -1,4 +1,4 @@
-package smvLive;
+package com.roeper.bu.urop.svmLive;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;

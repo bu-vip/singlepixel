@@ -1,4 +1,4 @@
-package smvLive;
+package com.roeper.bu.urop.svmLive;
 
 import com.roeper.bu.urop.lib.BrokerConfig;
 

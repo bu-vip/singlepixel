@@ -1,4 +1,4 @@
-package smvLive;
+package com.roeper.bu.urop.svmLive;
 
 import java.util.List;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
 
-public class SVMlive implements MqttCallback
+public class SVMLive implements MqttCallback
 {
 	public static void main(String args[]) throws Exception
 	{
@@ -45,24 +45,22 @@ public class SVMlive implements MqttCallback
 				throw new RuntimeException("Error getting config");
 			}
 
-			SVMLiveModuleConfig config = new SVMLiveModuleConfig(	brokerConfig,
-																	args[1]);
+			SVMLiveModuleConfig config = new SVMLiveModuleConfig(brokerConfig, args[1]);
 
 			Injector injector = Guice.createInjector(new SVMLiveModule(config));
 
 			// create
-			final SVMlive svMlive = injector.getInstance(SVMlive.class);
+			final SVMLive svMlive = injector.getInstance(SVMLive.class);
 
 			// add shutdown hook
-			Runtime	.getRuntime()
-					.addShutdownHook(new Thread()
-					{
-						@Override
-						public void run()
-						{
-							svMlive.stop();
-						}
-					});
+			Runtime.getRuntime().addShutdownHook(new Thread()
+			{
+				@Override
+				public void run()
+				{
+					svMlive.stop();
+				}
+			});
 
 			// start
 			svMlive.start();
@@ -75,7 +73,9 @@ public class SVMlive implements MqttCallback
 		}
 	}
 
-	final Logger logger = LoggerFactory.getLogger(SVMlive.class);
+	private static final int BACKGROUND_LENGTH = 1000;
+
+	final Logger logger = LoggerFactory.getLogger(SVMLive.class);
 
 	private final MqttClient client;
 	private final String topicPrefix;
@@ -85,10 +85,10 @@ public class SVMlive implements MqttCallback
 	private double backgroundMean;
 	private double backgroundStddev;
 	private List<SensorReading> readingsBuffer = new LinkedList<SensorReading>();
+	private SensorReading[] svmBuffer = new SensorReading[6];
 
 	@Inject
-	protected SVMlive(	MqttClient aClient,
-						@Named("topicPrefix") String aTopicPrefix,
+	protected SVMLive(	MqttClient aClient, @Named("topicPrefix") String aTopicPrefix,
 						@Named("modelFile") String aModelFile)
 	{
 		this.client = aClient;
@@ -117,8 +117,7 @@ public class SVMlive implements MqttCallback
 
 			// subscribe to receive sensor readings
 			String subscribeDest = this.topicPrefix + "/#";
-			logger.info("Subscribing to: {}",
-						subscribeDest);
+			logger.info("Subscribing to: {}", subscribeDest);
 			client.subscribe(subscribeDest);
 		}
 		catch (MqttException me)
@@ -131,6 +130,7 @@ public class SVMlive implements MqttCallback
 
 	public void recordBackground()
 	{
+		logger.info("Recording background...");
 		readingsBuffer.clear();
 		backgroundMean = 0;
 		backgroundStddev = 0;
@@ -156,6 +156,7 @@ public class SVMlive implements MqttCallback
 
 	public void connectionLost(Throwable arg0)
 	{
+		arg0.printStackTrace();
 		logger.info("Lost connection.");
 		this.stop();
 	}
@@ -165,8 +166,7 @@ public class SVMlive implements MqttCallback
 
 	}
 
-	public void messageArrived(	String aTopic,
-								MqttMessage message) throws Exception
+	public void messageArrived(String aTopic, MqttMessage message) throws Exception
 	{
 		String payload = new String(message.getPayload());
 		// remove prefix
@@ -186,29 +186,21 @@ public class SVMlive implements MqttCallback
 			if (readings.length != 6)
 			{
 				// log invalid sensor reading
-				logger.warn("Recevied an invalid sensor reading. Topic: {} Payload: {}",
-							aTopic,
+				logger.warn("Recevied an invalid sensor reading. Topic: {} Payload: {}", aTopic,
 							payload);
 			}
 			else
 			{
 				try
 				{
-					int red = Integer.parseInt(readings[0].trim());
-					int green = Integer.parseInt(readings[1].trim());
-					int blue = Integer.parseInt(readings[2].trim());
-					int white = Integer.parseInt(readings[3].trim());
+					double red = Double.parseDouble(readings[0].trim());
+					double green = Double.parseDouble(readings[1].trim());
+					double blue = Double.parseDouble(readings[2].trim());
+					double white = Double.parseDouble(readings[3].trim());
 					int time1 = Integer.parseInt(readings[4].trim());
 					int time2 = Integer.parseInt(readings[5].trim());
-					SensorReading reading = new SensorReading(	groupId,
-																sensorId,
-																red,
-																green,
-																blue,
-																white,
-																time1,
-																time2,
-																new Date());
+					SensorReading reading = new SensorReading(	groupId, sensorId, red, green, blue,
+																white, time1, time2, new Date());
 					processReading(reading);
 				}
 				catch (NumberFormatException e)
@@ -216,35 +208,54 @@ public class SVMlive implements MqttCallback
 					e.printStackTrace();
 					// log invalid number
 					logger.warn("An error occured processing a sensor reading. Topic: {} Payload: {}",
-								aTopic,
-								payload);
+								aTopic, payload);
 				}
 			}
 		}
 		else
 		{
 			// log invalid topic
-			logger.warn("Recevied an invalid topic. Topic: {} Payload: {}",
-						aTopic,
-						payload);
+			logger.warn("Recevied an invalid topic. Topic: {} Payload: {}", aTopic, payload);
 		}
 	}
 
 	private void processReading(SensorReading aReading)
 	{
-		readingsBuffer.add(aReading);
-		if (recordingBackground && readingsBuffer.size() > 100)
+		if (recordingBackground)
 		{
-			calculateBackground();
-			recordingBackground = false;
+			readingsBuffer.add(aReading);
+			if (readingsBuffer.size() > BACKGROUND_LENGTH)
+			{
+				logger.info("Finished recording background");
+				calculateBackground();
+				readingsBuffer.clear();
+				recordingBackground = false;
+			}
 		}
-		else if (!recordingBackground && readingsBuffer.size() == 6)
+		else if (!recordingBackground)
 		{
-			SensorReading[] measures = (SensorReading[]) readingsBuffer.toArray();
-			readingsBuffer.clear();
-			double res = predict(measures);
-			logger.info("Predicted: {}",
-						res);
+			svmBuffer[Integer.parseInt(aReading.getSensorId())] = aReading;
+
+			boolean updated = true;
+			for (int i = 0; i < svmBuffer.length; i++)
+			{
+				if (svmBuffer[i] == null)
+				{
+					updated = false;
+					break;
+				}
+			}
+
+			if (updated)
+			{
+				double res = predict(svmBuffer);
+				System.out.println("Predicted: " + res);
+
+				for (int i = 0; i < svmBuffer.length; i++)
+				{
+					svmBuffer[i] = null;
+				}
+			}
 		}
 	}
 
@@ -268,11 +279,13 @@ public class SVMlive implements MqttCallback
 		for (double a : data)
 			sum += a;
 		backgroundMean = sum / data.length;
+		logger.info("Background mean: {}", backgroundMean);
 
 		double temp = 0;
 		for (double a : data)
 			temp += (backgroundMean - a) * (backgroundMean - a);
-		backgroundStddev = temp / data.length;
+		backgroundStddev = Math.sqrt(temp / data.length);
+		logger.info("Background stddev: {}", backgroundStddev);
 	}
 
 	private double predict(SensorReading[] aReadings)
@@ -280,11 +293,11 @@ public class SVMlive implements MqttCallback
 		svm_node[] data = new svm_node[6];
 		for (int i = 0; i < data.length; i++)
 		{
-			data[0] = new svm_node();
-			data[0].index = 1;
-			data[0].value = (aReadings[i].getLuminance() - backgroundMean) / backgroundStddev;
+			data[i] = new svm_node();
+			data[i].index = i;
+			data[i].value = (aReadings[i].getLuminance() - backgroundMean) / backgroundStddev;
 		}
-		return svm.svm_predict(	this.model,
-								data);
+
+		return svm.svm_predict(this.model, data);
 	}
 }
