@@ -2,7 +2,6 @@ package com.roeper.bu.urop.lib;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
@@ -14,7 +13,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 
-public class ObjectReader<T> implements Iterator<T>
+public class ObjectReader<T> implements Iterator<T>, Service
 {
 	final Logger logger = LoggerFactory.getLogger(ObjectReader.class);
 	private File inputFile;
@@ -31,9 +30,7 @@ public class ObjectReader<T> implements Iterator<T>
 		this.classVar = aClassVar;
 	}
 	
-	
-
-	public void open() throws FileNotFoundException
+	public void start() throws Exception
 	{
 		bufferedReader = new BufferedReader(new FileReader(inputFile));
 		next = readNext();
@@ -90,7 +87,7 @@ public class ObjectReader<T> implements Iterator<T>
 		// do nothing
 	}
 
-	public void close()
+	public void stop() throws Exception
 	{
 		if (bufferedReader != null)
 		{

@@ -1,8 +1,10 @@
-package com.roeper.bu.urop.lib;
+package com.roeper.bu.urop.readings.sync;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.roeper.bu.urop.readings.optitrack.OptitrackReading;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
 public class LinkedReading
 {

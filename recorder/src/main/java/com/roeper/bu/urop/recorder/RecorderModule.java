@@ -9,10 +9,12 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.name.Named;
+import com.google.inject.Singleton;
 import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ObjectWriter;
-import com.roeper.bu.urop.lib.SensorReading;
+import com.roeper.bu.urop.mqtt.MQTTSensorReadingProvider;
+import com.roeper.bu.urop.readings.ReadingProvider;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
 public class RecorderModule extends AbstractModule
 {
@@ -30,6 +32,14 @@ public class RecorderModule extends AbstractModule
 	}
 
 	@Provides
+	public ReadingProvider<SensorReading> getProvider(MqttClient aClient)
+	{
+		MQTTSensorReadingProvider provider = new MQTTSensorReadingProvider(aClient, this.config.getBrokerConfig().getTopicPrefix());
+		return provider;
+	}
+	
+	@Provides
+	@Singleton
 	public MqttClient getClient()
 	{
 		MqttClient client = null;
@@ -66,12 +76,5 @@ public class RecorderModule extends AbstractModule
 		}
 
 		return new ObjectWriter<SensorReading>(aMapper, destinationFile);
-	}
-	
-	@Provides
-	@Named("topicPrefix")
-	public String getTopicPrefix()
-	{
-		return this.config.getBrokerConfig().getTopicPrefix();
 	}
 }

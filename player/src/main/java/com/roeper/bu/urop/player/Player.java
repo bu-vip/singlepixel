@@ -1,6 +1,5 @@
 package com.roeper.bu.urop.player;
 
-import java.io.FileNotFoundException;
 import java.util.Date;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -16,8 +15,8 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ConfigReader;
-import com.roeper.bu.urop.lib.SensorReading;
 import com.roeper.bu.urop.lib.ObjectReader;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
 public class Player
 {
@@ -85,7 +84,7 @@ public class Player
 	{
 		try
 		{
-			this.reader.open();
+			this.reader.start();
 
 			MqttConnectOptions connOpts = new MqttConnectOptions();
 			connOpts.setCleanSession(true);
@@ -126,9 +125,8 @@ public class Player
 			logger.error("An error occured connecting to the broker");
 			me.printStackTrace();
 		}
-		catch (FileNotFoundException ea)
+		catch (Exception ea)
 		{
-			logger.error("The input file was not found");
 			ea.printStackTrace();
 		}
 		finally
@@ -149,16 +147,15 @@ public class Player
 
 	public void stop()
 	{
-		this.reader.close();
-
 		try
 		{
+			this.reader.stop();
 			if (this.client.isConnected())
 			{
 				this.client.disconnect();
 			}
 		}
-		catch (MqttException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}

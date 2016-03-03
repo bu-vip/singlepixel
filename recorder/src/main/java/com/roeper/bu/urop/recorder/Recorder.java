@@ -1,26 +1,21 @@
 package com.roeper.bu.urop.recorder;
 
-import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Optional;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ConfigReader;
 import com.roeper.bu.urop.lib.ObjectWriter;
-import com.roeper.bu.urop.lib.SensorReading;
+import com.roeper.bu.urop.readings.ReadingProvider;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
-public class Recorder implements MqttCallback
+public class Recorder
 {
 	public static void main(String args[]) throws Exception
 	{
@@ -39,8 +34,7 @@ public class Recorder implements MqttCallback
 				throw new RuntimeException("Error getting config");
 			}
 
-			RecorderModuleConfig config = new RecorderModuleConfig(	brokerConfig,
-																	args[1]);
+			RecorderModuleConfig config = new RecorderModuleConfig(brokerConfig, args[1]);
 
 			Injector injector = Guice.createInjector(new RecorderModule(config));
 
@@ -48,15 +42,14 @@ public class Recorder implements MqttCallback
 			final Recorder recorder = injector.getInstance(Recorder.class);
 
 			// add shutdown hook
-			Runtime	.getRuntime()
-					.addShutdownHook(new Thread()
-					{
-						@Override
-						public void run()
-						{
-							recorder.stop();
-						}
-					});
+			Runtime.getRuntime().addShutdownHook(new Thread()
+			{
+				@Override
+				public void run()
+				{
+					recorder.stop();
+				}
+			});
 
 			// start recorder
 			recorder.start();
@@ -69,44 +62,73 @@ public class Recorder implements MqttCallback
 
 	final Logger logger = LoggerFactory.getLogger(Recorder.class);
 
+	// Writer used to write the readings to a file
 	private final ObjectWriter<SensorReading> writer;
-	private final MqttClient client;
-	private final String topicPrefix;
+	// Provider of sensor readings
+	private final ReadingProvider<SensorReading> provider;
+	// Used to notify the worker thread when it should stop
+	private final AtomicBoolean shouldStop = new AtomicBoolean(false);
+	// Used to ensure the writer / provider are not modified asynchronously
+	private final Object writerProviderLock = new Object();
 
 	@Inject
 	protected Recorder(	ObjectWriter<SensorReading> aWriter,
-						MqttClient aClient,
-						@Named("topicPrefix") String aTopicPrefix)
+						ReadingProvider<SensorReading> aReadingProvider)
 	{
 		this.writer = aWriter;
-		this.client = aClient;
-		this.topicPrefix = aTopicPrefix;
+		this.provider = aReadingProvider;
 	}
 
 	public void start()
 	{
-
-		writer.open();
-
 		try
 		{
-			MqttConnectOptions connOpts = new MqttConnectOptions();
-			connOpts.setCleanSession(true);
-			client.connect(connOpts);
-			logger.info("Successfully connected to broker.");
-			client.setCallback(this);
-
-			// subscribe to receive sensor readings
-			String subscribeDest = this.topicPrefix + "/#";
-			logger.info("Subscribing to: {}",
-						subscribeDest);
-			client.subscribe(subscribeDest);
+			// lock writer & provider
+			//note synchronized does not include the catch, as stop() also uses lock
+			synchronized (writerProviderLock)
+			{
+				writer.start();
+				provider.start();
+				(new Thread(new Worker())).start();
+			}
 		}
-		catch (MqttException me)
+		catch (Exception e)
 		{
-			logger.error("An error occured connecting to the broker");
-			me.printStackTrace();
+			e.printStackTrace();
 			this.stop();
+		}
+	}
+
+	private class Worker implements Runnable
+	{
+		public void run()
+		{
+			// lock writer & provider
+			synchronized (writerProviderLock)
+			{
+				while (!shouldStop.get())
+				{
+					// check for new readings
+					Optional<SensorReading> reading = provider.getReading();
+					if (reading.isPresent())
+					{
+						writer.write(reading.get());
+					}
+					else
+					{
+						// if no readings available, wait for a little bit
+						try
+						{
+							Thread.sleep(10);
+						}
+						catch (InterruptedException expected)
+						{
+
+						}
+					}
+				}
+
+			}
 		}
 	}
 
@@ -114,94 +136,18 @@ public class Recorder implements MqttCallback
 	{
 		logger.info("Stopping...");
 
-		writer.close();
-
-		try
+		// lock writer & provider
+		synchronized (writerProviderLock)
 		{
-			if (client.isConnected())
+			try
 			{
-				client.disconnect();
+				writer.stop();
+				provider.stop();
 			}
-		}
-		catch (MqttException e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	public void connectionLost(Throwable arg0)
-	{
-		logger.info("Lost connection. All data collected will be saved");
-		this.stop();
-	}
-
-	public void deliveryComplete(IMqttDeliveryToken arg0)
-	{
-
-	}
-
-	public void messageArrived(	String aTopic,
-								MqttMessage message) throws Exception
-	{
-		String payload = new String(message.getPayload());
-		// remove prefix
-		String topic = aTopic.substring(this.topicPrefix.length());
-		String[] levels = topic.split("/");
-
-		// basic sanity checking
-		if (levels.length == 5 && levels[1].equals("group") && levels[3].equals("sensor"))
-		{
-			// get sensor info from topic structure:
-			// e.g. <prefix>/group/<id>/sensor/<id>
-			String groupId = levels[2];
-			String sensorId = levels[4];
-
-			// more checking
-			String[] readings = (payload).split(",");
-			if (readings.length != 6)
+			catch (Exception e)
 			{
-				// log invalid sensor reading
-				logger.warn("Recevied an invalid sensor reading. Topic: {} Payload: {}",
-							aTopic,
-							payload);
+				e.printStackTrace();
 			}
-			else
-			{
-				try
-				{
-					double red = Double.parseDouble(readings[0].trim());
-					double green = Double.parseDouble(readings[1].trim());
-					double blue = Double.parseDouble(readings[2].trim());
-					double white = Double.parseDouble(readings[3].trim());
-					int time1 = Integer.parseInt(readings[4].trim());
-					int time2 = Integer.parseInt(readings[5].trim());
-					SensorReading reading = new SensorReading(	groupId,
-																sensorId,
-																red,
-																green,
-																blue,
-																white,
-																time1,
-																time2,
-																new Date());
-					writer.write(reading);
-				}
-				catch (NumberFormatException e)
-				{
-					e.printStackTrace();
-					// log invalid number
-					logger.warn("An error occured processing a sensor reading. Topic: {} Payload: {}",
-								aTopic,
-								payload);
-				}
-			}
-		}
-		else
-		{
-			// log invalid topic
-			logger.warn("Recevied an invalid topic. Topic: {} Payload: {}",
-						aTopic,
-						payload);
 		}
 	}
 }

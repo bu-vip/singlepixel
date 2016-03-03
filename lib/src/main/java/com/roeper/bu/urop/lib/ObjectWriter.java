@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * @param <T> - The type of object to write.
  */
-public class ObjectWriter<T>
+public class ObjectWriter<T> implements Service
 {
 	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
 	private ObjectMapper mapper;
@@ -37,7 +37,7 @@ public class ObjectWriter<T>
 		this.destination = aDestination;
 	}
 
-	public void open()
+	public void start() throws Exception
 	{
 		(new Thread(new WriteReadingsWorker())).start();
 	}
@@ -54,7 +54,7 @@ public class ObjectWriter<T>
 		}
 	}
 
-	public void close()
+	public void stop() throws Exception
 	{
 		if (!done.get())
 		{

@@ -1,15 +1,15 @@
 package com.roeper.bu.urop.optitrackToJSON;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
 import com.roeper.bu.urop.lib.ObjectWriter;
-import com.roeper.bu.urop.lib.OptitrackCSVParser;
-import com.roeper.bu.urop.lib.OptitrackReading;
+import com.roeper.bu.urop.readings.optitrack.OptitrackCSVParser;
+import com.roeper.bu.urop.readings.optitrack.OptitrackReading;
 
 public class OptitrackToJSON
 {
@@ -59,21 +59,21 @@ public class OptitrackToJSON
 		try
 		{
 			logger.info("Opening file...");
-			this.optiDataParser.open();
-			this.writer.open();
+			this.optiDataParser.start();
+			this.writer.start();
 
 			logger.info("Converting file...");
 			while (optiDataParser.hasNext())
 			{
-				OptitrackReading next = optiDataParser.next();
-				writer.write(next);
+				Optional<OptitrackReading> next = optiDataParser.getReading();
+				writer.write(next.get());
 			}
-			this.optiDataParser.close();
-			this.writer.close();
+			this.optiDataParser.stop();
+			this.writer.stop();
 
 			logger.info("Done.");
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -85,7 +85,14 @@ public class OptitrackToJSON
 
 	public void stop()
 	{
-		this.optiDataParser.close();
-		this.writer.close();
+		try
+		{
+			this.optiDataParser.stop();
+			this.writer.stop();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 }

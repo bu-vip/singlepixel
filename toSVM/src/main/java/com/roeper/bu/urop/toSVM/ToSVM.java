@@ -4,7 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import com.roeper.bu.urop.lib.LinkedReading;
+import com.roeper.bu.urop.readings.sync.LinkedReading;
 
 public class ToSVM
 {

@@ -12,7 +12,7 @@ import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ObjectReader;
-import com.roeper.bu.urop.lib.SensorReading;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
 public class PlayerModule extends AbstractModule
 {

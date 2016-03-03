@@ -1,8 +1,7 @@
-package com.roeper.bu.urop.lib;
+package com.roeper.bu.urop.readings.optitrack;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -10,8 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.roeper.bu.urop.readings.ReadingProvider;
 
-public class OptitrackCSVParser
+public class OptitrackCSVParser implements ReadingProvider<OptitrackReading>
 {
 	final Logger logger = LoggerFactory.getLogger(OptitrackCSVParser.class);
 	private File inputFile;
@@ -24,10 +24,9 @@ public class OptitrackCSVParser
 		this.inputFile = aInputFile;
 	}
 
-	public void open() throws FileNotFoundException
+	public void start() throws Exception
 	{
 		bufferedReader = new BufferedReader(new FileReader(inputFile));
-		next = readNext();
 	}
 
 	public boolean hasNext()
@@ -35,14 +34,7 @@ public class OptitrackCSVParser
 		return next.isPresent();
 	}
 
-	public OptitrackReading next()
-	{
-		OptitrackReading current = next.get();
-		next = readNext();
-		return current;
-	}
-
-	private Optional<OptitrackReading> readNext()
+	public Optional<OptitrackReading> getReading()
 	{
 		Optional<OptitrackReading> optRead = Optional.absent();
 		try
@@ -96,19 +88,12 @@ public class OptitrackCSVParser
 		// do nothing
 	}
 
-	public void close()
+	public void stop() throws Exception
 	{
 		if (bufferedReader != null)
 		{
-			try
-			{
 				// Always close files.
 				bufferedReader.close();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
 		}
 	}
 }

@@ -20,7 +20,7 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import com.roeper.bu.urop.lib.BrokerConfig;
 import com.roeper.bu.urop.lib.ConfigReader;
-import com.roeper.bu.urop.lib.SensorReading;
+import com.roeper.bu.urop.readings.sensor.SensorReading;
 
 import libsvm.svm;
 import libsvm.svm_model;

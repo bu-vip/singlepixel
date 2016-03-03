@@ -1,4 +1,4 @@
-package com.roeper.bu.urop.lib;
+package com.roeper.bu.urop.readings.sensor;
 
 import java.util.Date;
 
