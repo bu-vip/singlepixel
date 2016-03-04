@@ -7,7 +7,7 @@ library(grid)
 library(gridExtra)
 
 source("sync.R")
-source("multiplot.R")
+source("features.R")
 
 # Converts a input sensor data file and optitrack file into SVM ready data points
 
@@ -62,6 +62,8 @@ backgroundData <- fromJSON(readChar(backgroundFileName, file.info(backgroundFile
 backgroundData$luminance <- features_calc_luminance(backgroundData$red, backgroundData$green, backgroundData$blue)
 backgroundMean <- mean(backgroundData$luminance)
 
+feature_derivative <- "deriv"
+
 # process all takes
 for (i in 1:length(sensorFiles))
 {
@@ -106,10 +108,31 @@ for (i in 1:length(sensorFiles))
   optiData$class <- optiData$class + pmin(floor((optiData$z - optMinZ) / optLevelSizeZ), quantizeLevels - 1) * quantizeLevels
   
   # Sync optitrack and sensor data
-  syncedData <- sync_sensor_optitrack(sensData, sensorDataStartTime, sensorDataEndTime, optiData, optiDataStartTime, optiDataEndTime, numberSamplesToRemoveStart, numberSamplesToRemoveEnd)
+  syncedData <- sync_sensor_optitrack(sensData, sensorDataStartTime, sensorDataEndTime, optiData, optiDataStartTime, optiDataEndTime)
+  
+  
+  # Calculate some more features
+  syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
+  
+  # trim data
+  syncedData <- syncedData[-seq(0, numberSamplesToRemoveStart, by=1), ]
+  syncedData <- syncedData[-seq(nrow(syncedData) - numberSamplesToRemoveEnd + 1, nrow(syncedData) + 1, by=1), ]
+  
   
   # Plot synced data
-  sync_plot_data(syncedData, uniqueSensors, paste(outputName, "synced.png", sep=""));
+  # create sensor data plot
+  meltedSensor <- melt(syncedData[, c(uniqueSensors, "t")], id=c("t"))
+  sensorPlot <- ggplot(data=meltedSensor, aes(x=t, y=value, color=variable)) + geom_line()
+  # create sensor data plot
+  meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
+  sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
+  # create class plot
+  meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
+  classPlot <- ggplot(data=meltedClass, aes(x=t, y=value, color=variable)) + geom_line()
+  # save to png
+  png(paste(outputName, "synced.png", sep=""), width=1200, height=900)
+  grid.arrange(sensorPlot, sensorDerivPlot, classPlot, ncol=1)
+  dev.off()
   
   # write data to json file
   jsonFile <- file(paste(outputName, "synced.json", sep=""))
