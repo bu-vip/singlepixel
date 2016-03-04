@@ -14,10 +14,11 @@ library(gridExtra)
 source("sync.R")
 source("features.R")
 
-dataPath <- "/home/doug/Desktop/UROP/track2/"
+dataPath <- "/home/doug/Desktop/UROP/track2/data/"
 sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
 optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json", "take4_opti.json", "take5_opti.json", "take6_opti.json", "take7_opti.json", "take8_opti.json")
 outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
+outputFolder <- "/home/doug/Desktop/UROP/track2/r_out/"
 sensorStartTimes <- c(1456450336081,1456450519513,1456450754459,1456450931828,1456452135556,1456452392004,1456452517247,1456452624509)
 sensorEndTimes <- c(1456450385980,1456450581633,1456450823245,1456451051018,1456452244232,1456452462100,1456452586229,1456452676624)
 optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
@@ -78,7 +79,7 @@ for (i in 1:length(sensorFiles))
   sensorDataEndTime <- sensorEndTimes[i]
   numberSamplesToRemoveStart <- trimStart[i]
   numberSamplesToRemoveEnd <- trimEnd[i]
-  outputName <- paste(dataPath, outputPrefixes[i], sep="")
+  outputName <- paste(outputFolder, outputPrefixes[i], sep="")
   
   ### LOAD DATA ###
   # load data
