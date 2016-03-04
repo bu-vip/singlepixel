@@ -17,7 +17,6 @@ public class OptitrackCSVParser implements ReadingProvider<OptitrackReading>
 	private File inputFile;
 	private long linesReadCount = 0;
 	private BufferedReader bufferedReader;
-	private Optional<OptitrackReading> next;
 
 	public OptitrackCSVParser(File aInputFile)
 	{
@@ -27,11 +26,6 @@ public class OptitrackCSVParser implements ReadingProvider<OptitrackReading>
 	public void start() throws Exception
 	{
 		bufferedReader = new BufferedReader(new FileReader(inputFile));
-	}
-
-	public boolean hasNext()
-	{
-		return next.isPresent();
 	}
 
 	public Optional<OptitrackReading> getReading()
@@ -92,8 +86,8 @@ public class OptitrackCSVParser implements ReadingProvider<OptitrackReading>
 	{
 		if (bufferedReader != null)
 		{
-				// Always close files.
-				bufferedReader.close();
+			// Always close files.
+			bufferedReader.close();
 		}
 	}
 }

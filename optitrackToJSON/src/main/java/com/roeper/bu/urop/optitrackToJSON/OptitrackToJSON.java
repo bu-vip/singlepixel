@@ -63,10 +63,10 @@ public class OptitrackToJSON
 			this.writer.start();
 
 			logger.info("Converting file...");
-			while (optiDataParser.hasNext())
+			Optional<OptitrackReading> optRead = Optional.absent();
+			while ((optRead = optiDataParser.getReading()).isPresent())
 			{
-				Optional<OptitrackReading> next = optiDataParser.getReading();
-				writer.write(next.get());
+				writer.write(optRead.get());
 			}
 			this.optiDataParser.stop();
 			this.writer.stop();
