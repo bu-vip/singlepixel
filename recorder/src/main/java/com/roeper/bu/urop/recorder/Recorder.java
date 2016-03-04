@@ -1,5 +1,7 @@
 package com.roeper.bu.urop.recorder;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -55,6 +57,11 @@ public class Recorder
 
 			// start recorder
 			recorder.start();
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	        System.out.print("Press enter to stop");
+	        br.readLine();
+	        recorder.stop();
 		}
 		else
 		{
@@ -84,10 +91,13 @@ public class Recorder
 	{
 		try
 		{
+			logger.info("Starting...");
 			writer.start();
 			provider.start();
 			shouldStop.set(false);
 			worker.start();
+			
+			logger.info("Recording...");
 		}
 		catch (Exception e)
 		{
@@ -131,9 +141,11 @@ public class Recorder
 		try
 		{
 			shouldStop.set(true);
-			worker.join();
-			writer.stop();
+			worker.join(5000);
+			logger.info("Stopping MQTT...");
 			provider.stop();
+			logger.info("Closing file...");
+			writer.stop();
 		}
 		catch (Exception e)
 		{

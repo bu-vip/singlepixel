@@ -52,7 +52,7 @@ public class ObjectWriter<T> implements Service
 	public void stop() throws Exception
 	{
 		shouldStop.set(true);
-		this.worker.join();
+		this.worker.join(5000);
 	}
 
 	private class WriteReadingsWorker implements Runnable
