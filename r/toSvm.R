@@ -3,7 +3,11 @@ rm(list = ls())
 library(jsonlite)
 library(ggplot2)
 library(reshape2)
-library(signal)
+library(grid)
+library(gridExtra)
+
+source("sync.R")
+source("multiplot.R")
 
 # Converts a input sensor data file and optitrack file into SVM ready data points
 
@@ -19,7 +23,7 @@ library(signal)
 # trimEnd <- c(50, 50, 50)
 # backgroundFileName <- "background.txt"
 
-setwd("/home/doug/Desktop/UROP/track2")
+dataPath <- "/home/doug/Desktop/UROP/track2/"
 sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
 optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json", "take4_opti.json", "take5_opti.json", "take6_opti.json", "take7_opti.json", "take8_opti.json")
 outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
@@ -29,7 +33,7 @@ optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
 optiEndTimes <- c(6674,7627,8551,13500,12417,8644,8381,6328)
 trimStart <- c(5,5,5,5,5,5,5,5)
 trimEnd <- c(50,50,50,50,50,75,50,50)
-backgroundFileName <- "background.txt"
+backgroundFileName <- paste(dataPath, "background.txt", sep="")
 
 
 # find the max and min of the optitrack data across all samples
@@ -39,7 +43,7 @@ optMinZ <- 999999
 optMaxZ <- -999999
 for (i in 1:length(sensorFiles))
 {
-  optiFileName <- optiFiles[i]
+  optiFileName <- paste(dataPath, optiFiles[i], sep="")
   optiDataStartTime <- optiStartTimes[i]
   optiDataEndTime <- optiEndTimes[i]
   
@@ -55,30 +59,33 @@ for (i in 1:length(sensorFiles))
 
 # calculate background sensor readings
 backgroundData <- fromJSON(readChar(backgroundFileName, file.info(backgroundFileName)$size))
-backgroundData$luminance <- 0.2989 * backgroundData$red + 0.5870 * backgroundData$green + 0.1140 * backgroundData$blue
+backgroundData$luminance <- features_calc_luminance(backgroundData$red, backgroundData$green, backgroundData$blue)
 backgroundMean <- mean(backgroundData$luminance)
-backgroundStdev <- sd(backgroundData$luminance)
 
 # process all takes
 for (i in 1:length(sensorFiles))
 {
   # get properties
-  sensorFileName <- sensorFiles[i]
-  optiFileName <- optiFiles[i]
+  sensorFileName <- paste(dataPath, sensorFiles[i], sep="")
+  optiFileName <- paste(dataPath, optiFiles[i], sep="")
   optiDataStartTime <- optiStartTimes[i]
   optiDataEndTime <- optiEndTimes[i]
   sensorDataStartTime <- sensorStartTimes[i]
   sensorDataEndTime <- sensorEndTimes[i]
   numberSamplesToRemoveStart <- trimStart[i]
   numberSamplesToRemoveEnd <- trimEnd[i]
-  outputName <- outputPrefixes[i]
+  outputName <- paste(dataPath, outputPrefixes[i], sep="")
   
   # load data
   sensData <- fromJSON(readChar(sensorFileName, file.info(sensorFileName)$size))
   optiData <- fromJSON(readChar(optiFileName, file.info(optiFileName)$size))
   
+  # create another column of groupId + sensorId
+  sensData$groupSensorId <- paste(sensData$groupId, "-", sensData$sensorId, sep="")
+  uniqueSensors <- sort(unique(sensData$groupSensorId))
+  
   # calculate luminance
-  sensData$luminance <- 0.2989 * sensData$red + 0.5870 * sensData$green + 0.1140 * sensData$blue
+  sensData$luminance <- features_calc_luminance(sensData$red, sensData$green, sensData$blue)
   
   # plot original data
   ggplot(sensData, aes(received, luminance)) + geom_line() + facet_grid(sensorId ~ .)
@@ -87,11 +94,6 @@ for (i in 1:length(sensorFiles))
   ggplot(data=optiMelt, aes(x=frameIndex, y=value, color=variable)) + geom_line()
   ggsave(paste(outputName, "opti_orig.png", sep=""), width = 8, height = 6)
   
-  
-  # trim data
-  optiData <- optiData[optiData$frameIndex >= optiDataStartTime & optiData$frameIndex <= optiDataEndTime, ]
-  sensData <- sensData[sensData$received >= sensorDataStartTime & sensData$received <= sensorDataEndTime, ]
-  
   # background subtraction
   sensData$luminanceNorm <- (sensData$luminance - backgroundMean)
   
@@ -99,47 +101,15 @@ for (i in 1:length(sensorFiles))
   quantizeLevels <- 3
   optLevelSizeX <- (optMaxX - optMinX) / quantizeLevels
   optLevelSizeZ <- (optMaxZ - optMinZ) / quantizeLevels
-  # mins remove max being outside class boundaries
+  # ensure inside class boundaries
   optiData$class <- pmin(floor((optiData$x - optMinX) / optLevelSizeX), quantizeLevels - 1)
   optiData$class <- optiData$class + pmin(floor((optiData$z - optMinZ) / optLevelSizeZ), quantizeLevels - 1) * quantizeLevels
   
-  # create another column of groupId + sensorId
-  sensData$groupSensorId <- paste(sensData$groupId, "-", sensData$sensorId, sep="")
+  # Sync optitrack and sensor data
+  syncedData <- sync_sensor_optitrack(sensData, sensorDataStartTime, sensorDataEndTime, optiData, optiDataStartTime, optiDataEndTime, numberSamplesToRemoveStart, numberSamplesToRemoveEnd)
   
-  #get unique sensors
-  uniqueSensors <- sort(unique(sensData$groupSensorId))
-  minReadingCount <- 9999999999
-  for (groupSensorId in uniqueSensors)
-  {
-    # get data only for current sensor
-    curSensorData <- sensData[sensData$groupSensorId == groupSensorId, ];
-    
-    # check for min reading size
-    readingCount <- nrow(curSensorData)
-    if (readingCount < minReadingCount)
-    {
-      minReadingCount <- readingCount
-    }
-  }
-  
-  # resample the optitrack data
-  optSampled <- resample(optiData$class, minReadingCount, nrow(optiData))
-  
-  # create a dataframe with all synced data
-  syncedData <- data.frame(t=seq(1, minReadingCount, by=1))
-  syncedData$class <- round(optSampled)
-  # resize sensor signals to be the same size
-  trimmedSensData <- sensData[sensData$groupSensorId == groupSensorId, ][seq(1, minReadingCount, by=1), ]
-  syncedData[groupSensorId] <- trimmedSensData$luminanceNorm
-  
-  # trim from end
-  syncedData <- syncedData[-seq(0, numberSamplesToRemoveStart, by=1), ]
-  syncedData <- syncedData[-seq(nrow(syncedData) - numberSamplesToRemoveEnd + 1, nrow(syncedData) + 1, by=1), ]
-  
-  # save graph to png
-  melted <- melt(syncedData, id=c("t"))
-  ggplot(data=melted, aes(x=t, y=value, color=variable)) + geom_line()
-  ggsave(paste(outputName, "synced.png", sep=""), width = 8, height = 6)
+  # Plot synced data
+  sync_plot_data(syncedData, uniqueSensors, paste(outputName, "synced.png", sep=""));
   
   # write data to json file
   jsonFile <- file(paste(outputName, "synced.json", sep=""))
