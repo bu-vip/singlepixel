@@ -130,6 +130,7 @@ public class Recorder
 
 		try
 		{
+			shouldStop.set(true);
 			worker.join();
 			writer.stop();
 			provider.stop();

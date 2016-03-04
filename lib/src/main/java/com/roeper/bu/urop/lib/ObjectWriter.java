@@ -27,9 +27,9 @@ public class ObjectWriter<T> implements Service
 	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
 	private ObjectMapper mapper;
 	private File destination;
-	private BlockingQueue<T> buffer = new LinkedBlockingQueue<T>();
-	private Thread worker = (new Thread(new WriteReadingsWorker()));
-	private AtomicBoolean shouldStop = new AtomicBoolean(false);
+	private final BlockingQueue<T> buffer = new LinkedBlockingQueue<T>();
+	private final Thread worker = (new Thread(new WriteReadingsWorker()));
+	private final AtomicBoolean shouldStop = new AtomicBoolean(false);
 
 	public ObjectWriter(ObjectMapper aMapper,
 						File aDestination)
@@ -52,11 +52,7 @@ public class ObjectWriter<T> implements Service
 	public void stop() throws Exception
 	{
 		shouldStop.set(true);
-		if (this.worker != null)
-		{
-			this.worker.join();
-			this.worker = null;
-		}
+		this.worker.join();
 	}
 
 	private class WriteReadingsWorker implements Runnable
