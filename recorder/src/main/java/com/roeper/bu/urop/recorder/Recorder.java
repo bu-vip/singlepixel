@@ -34,7 +34,8 @@ public class Recorder
 				throw new RuntimeException("Error getting config");
 			}
 
-			RecorderModuleConfig config = new RecorderModuleConfig(brokerConfig, args[1]);
+			RecorderModuleConfig config = new RecorderModuleConfig(	brokerConfig,
+																	args[1]);
 
 			Injector injector = Guice.createInjector(new RecorderModule(config));
 
@@ -42,14 +43,15 @@ public class Recorder
 			final Recorder recorder = injector.getInstance(Recorder.class);
 
 			// add shutdown hook
-			Runtime.getRuntime().addShutdownHook(new Thread()
-			{
-				@Override
-				public void run()
-				{
-					recorder.stop();
-				}
-			});
+			Runtime	.getRuntime()
+					.addShutdownHook(new Thread()
+					{
+						@Override
+						public void run()
+						{
+							recorder.stop();
+						}
+					});
 
 			// start recorder
 			recorder.start();
@@ -68,8 +70,7 @@ public class Recorder
 	private final ReadingProvider<SensorReading> provider;
 	// Used to notify the worker thread when it should stop
 	private final AtomicBoolean shouldStop = new AtomicBoolean(false);
-	// Used to ensure the writer / provider are not modified asynchronously
-	private final Object writerProviderLock = new Object();
+	private final Thread worker = (new Thread(new Worker()));
 
 	@Inject
 	protected Recorder(	ObjectWriter<SensorReading> aWriter,
@@ -83,14 +84,10 @@ public class Recorder
 	{
 		try
 		{
-			// lock writer & provider
-			//note synchronized does not include the catch, as stop() also uses lock
-			synchronized (writerProviderLock)
-			{
-				writer.start();
-				provider.start();
-				(new Thread(new Worker())).start();
-			}
+			writer.start();
+			provider.start();
+			shouldStop.set(false);
+			worker.start();
 		}
 		catch (Exception e)
 		{
@@ -103,31 +100,26 @@ public class Recorder
 	{
 		public void run()
 		{
-			// lock writer & provider
-			synchronized (writerProviderLock)
+			while (!shouldStop.get())
 			{
-				while (!shouldStop.get())
+				// check for new readings
+				Optional<SensorReading> reading = provider.getReading();
+				if (reading.isPresent())
 				{
-					// check for new readings
-					Optional<SensorReading> reading = provider.getReading();
-					if (reading.isPresent())
+					writer.write(reading.get());
+				}
+				else
+				{
+					// if no readings available, wait for a little bit
+					try
 					{
-						writer.write(reading.get());
+						Thread.sleep(10);
 					}
-					else
+					catch (InterruptedException expected)
 					{
-						// if no readings available, wait for a little bit
-						try
-						{
-							Thread.sleep(10);
-						}
-						catch (InterruptedException expected)
-						{
 
-						}
 					}
 				}
-
 			}
 		}
 	}
@@ -136,18 +128,15 @@ public class Recorder
 	{
 		logger.info("Stopping...");
 
-		// lock writer & provider
-		synchronized (writerProviderLock)
+		try
 		{
-			try
-			{
-				writer.stop();
-				provider.stop();
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
+			worker.join();
+			writer.stop();
+			provider.stop();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 	}
 }
