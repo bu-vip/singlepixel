@@ -32,7 +32,7 @@ sync_sensor_optitrack <- function(sensorData, sensorStartTime, sensorEndTime, op
   {
     # resize sensor signals to be the same size
     trimmedsensorData <- sensorData[sensorData$groupSensorId == groupSensorId, ][seq(1, minReadingCount, by=1), ]
-    syncedData[groupSensorId] <- trimmedsensorData$luminanceNorm
+    syncedData[groupSensorId] <- trimmedsensorData$luminance
   }
 
   return(syncedData)

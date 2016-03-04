@@ -1,3 +1,8 @@
+# Doug Roeper
+# BU UROP
+# 
+# Converts sensor data file(s) and optitrack file(s) into SVM ready data points
+
 rm(list = ls())
 
 library(jsonlite)
@@ -9,20 +14,6 @@ library(gridExtra)
 source("sync.R")
 source("features.R")
 
-# Converts a input sensor data file and optitrack file into SVM ready data points
-
-# setwd("/home/doug/Desktop/UROP/track1")
-# sensorFiles <- c("take1_raw.txt", "take2_raw.txt", "take3_raw.txt")
-# optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json")
-# outputPrefixes <- c("take1_res", "take2_res", "take3_res")
-# sensorStartTimes <- c(1456351290828, 1456351427988, 1456351589187)
-# sensorEndTimes <- c(1456351348197, 1456351498487, 1456351659988)
-# optiStartTimes <- c(1813, 1346, 1220)
-# optiEndTimes <- c(7552, 8398, 8302)
-# trimStart <- c(5, 5, 5)
-# trimEnd <- c(50, 50, 50)
-# backgroundFileName <- "background.txt"
-
 dataPath <- "/home/doug/Desktop/UROP/track2/"
 sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
 optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json", "take4_opti.json", "take5_opti.json", "take6_opti.json", "take7_opti.json", "take8_opti.json")
@@ -33,7 +24,20 @@ optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
 optiEndTimes <- c(6674,7627,8551,13500,12417,8644,8381,6328)
 trimStart <- c(5,5,5,5,5,5,5,5)
 trimEnd <- c(50,50,50,50,50,75,50,50)
-backgroundFileName <- paste(dataPath, "background.txt", sep="")
+backgroundFile <- "background.txt"
+
+
+# Config options
+feature_derivative <- "deriv"
+shouldGraph <- 0
+graphWidthInch <- 8
+graphHeightInch <- 6
+graphWidthPx <- 1200
+graphHeightPx <-900
+
+# Constants
+backgroundFileName <- paste(dataPath, backgroundFile, sep="")
+
 
 
 # find the max and min of the optitrack data across all samples
@@ -62,8 +66,6 @@ backgroundData <- fromJSON(readChar(backgroundFileName, file.info(backgroundFile
 backgroundData$luminance <- features_calc_luminance(backgroundData$red, backgroundData$green, backgroundData$blue)
 backgroundMean <- mean(backgroundData$luminance)
 
-feature_derivative <- "deriv"
-
 # process all takes
 for (i in 1:length(sensorFiles))
 {
@@ -78,27 +80,24 @@ for (i in 1:length(sensorFiles))
   numberSamplesToRemoveEnd <- trimEnd[i]
   outputName <- paste(dataPath, outputPrefixes[i], sep="")
   
+  ### LOAD DATA ###
   # load data
   sensData <- fromJSON(readChar(sensorFileName, file.info(sensorFileName)$size))
   optiData <- fromJSON(readChar(optiFileName, file.info(optiFileName)$size))
   
-  # create another column of groupId + sensorId
+  ### UNIQUE SENSORS ###
+  # Create a key to address each sensor individually
+  # key = groupId + sensorId
   sensData$groupSensorId <- paste(sensData$groupId, "-", sensData$sensorId, sep="")
   uniqueSensors <- sort(unique(sensData$groupSensorId))
   
+  ### LUMINANCE ###
   # calculate luminance
   sensData$luminance <- features_calc_luminance(sensData$red, sensData$green, sensData$blue)
-  
-  # plot original data
-  ggplot(sensData, aes(received, luminance)) + geom_line() + facet_grid(sensorId ~ .)
-  ggsave(paste(outputName, "sensor_orig.png", sep=""), width = 8, height = 6)
-  optiMelt <- melt(optiData[, c("frameIndex", "x", "y", "z")], id=c("frameIndex"))
-  ggplot(data=optiMelt, aes(x=frameIndex, y=value, color=variable)) + geom_line()
-  ggsave(paste(outputName, "opti_orig.png", sep=""), width = 8, height = 6)
-  
   # background subtraction
-  sensData$luminanceNorm <- (sensData$luminance - backgroundMean)
+  sensData$luminance <- (sensData$luminance - backgroundMean)
   
+  ### CLASSES ###
   # calculate class for optitrack data
   quantizeLevels <- 3
   optLevelSizeX <- (optMaxX - optMinX) / quantizeLevels
@@ -107,38 +106,49 @@ for (i in 1:length(sensorFiles))
   optiData$class <- pmin(floor((optiData$x - optMinX) / optLevelSizeX), quantizeLevels - 1)
   optiData$class <- optiData$class + pmin(floor((optiData$z - optMinZ) / optLevelSizeZ), quantizeLevels - 1) * quantizeLevels
   
+  ### SYNC ###
   # Sync optitrack and sensor data
   syncedData <- sync_sensor_optitrack(sensData, sensorDataStartTime, sensorDataEndTime, optiData, optiDataStartTime, optiDataEndTime)
   
-  
-  # Calculate some more features
+  ### TRANSFORMATIONS ###
+  # Calculate additional features
   syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
   
   # trim data
   syncedData <- syncedData[-seq(0, numberSamplesToRemoveStart, by=1), ]
   syncedData <- syncedData[-seq(nrow(syncedData) - numberSamplesToRemoveEnd + 1, nrow(syncedData) + 1, by=1), ]
   
+  ### GRAPHING ###
+  if (shouldGraph == 1)
+  {
+    # plot original data
+    ggplot(sensData, aes(received, luminance)) + geom_line() + facet_grid(sensorId ~ .)
+    ggsave(paste(outputName, "sensor_orig.png", sep=""), width = graphWidthInch, height = graphHeightInch)
+    optiMelt <- melt(optiData[, c("frameIndex", "x", "y", "z")], id=c("frameIndex"))
+    ggplot(data=optiMelt, aes(x=frameIndex, y=value, color=variable)) + geom_line()
+    ggsave(paste(outputName, "opti_orig.png", sep=""), width = graphWidthInch, height = graphHeightInch)
+    
+    # Plot synced data
+    # create sensor data plot
+    meltedSensor <- melt(syncedData[, c(uniqueSensors, "t")], id=c("t"))
+    sensorPlot <- ggplot(data=meltedSensor, aes(x=t, y=value, color=variable)) + geom_line()
+    # create sensor data plot
+    meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
+    sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
+    # create class plot
+    meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
+    classPlot <- ggplot(data=meltedClass, aes(x=t, y=value, color=variable)) + geom_line()
+    # save to png
+    png(paste(outputName, "synced.png", sep=""), width=graphWidthPx, height=graphHeightPx)
+    grid.arrange(sensorPlot, sensorDerivPlot, classPlot, ncol=1)
+    dev.off()
+  }
   
-  # Plot synced data
-  # create sensor data plot
-  meltedSensor <- melt(syncedData[, c(uniqueSensors, "t")], id=c("t"))
-  sensorPlot <- ggplot(data=meltedSensor, aes(x=t, y=value, color=variable)) + geom_line()
-  # create sensor data plot
-  meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
-  sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
-  # create class plot
-  meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
-  classPlot <- ggplot(data=meltedClass, aes(x=t, y=value, color=variable)) + geom_line()
-  # save to png
-  png(paste(outputName, "synced.png", sep=""), width=1200, height=900)
-  grid.arrange(sensorPlot, sensorDerivPlot, classPlot, ncol=1)
-  dev.off()
-  
+  ### OUTPUT ###
   # write data to json file
   jsonFile <- file(paste(outputName, "synced.json", sep=""))
   writeLines(toJSON(syncedData, pretty=FALSE), jsonFile)
   close(jsonFile)
-  
   # write to csv
   write.csv(syncedData, file=paste(outputName, "synced.csv", sep=""))
 }
