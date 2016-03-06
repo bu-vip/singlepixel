@@ -5,6 +5,7 @@ angular.module('myApp', [
   'ngRoute',
   'myApp.configView',
   'myApp.rawDataView',
+  'myApp.confusionView',
   'myApp.version'
 ]).
 config(['$routeProvider', function($routeProvider) {

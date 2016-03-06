@@ -30,7 +30,7 @@ backgroundFile <- "background.txt"
 
 # Config options
 feature_derivative <- "deriv"
-shouldGraph <- 0
+shouldGraph <- 1
 graphWidthInch <- 8
 graphHeightInch <- 6
 graphWidthPx <- 1200

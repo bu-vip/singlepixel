@@ -1,10 +1,8 @@
-/* line 1, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_configView.scss */
 .form-connect {
   max-width: 330px;
   padding: 15px;
   margin: 0 auto; }
 
-/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_configView.scss */
 .form-connect .form-control {
   position: relative;
   height: auto;
@@ -14,12 +12,17 @@
   padding: 10px;
   font-size: 16px; }
 
-/* line 7, /Users/Doug/Documents/College/Research/Konrad/UROP_SinglePixelLocalization/web-console/scss/_rawDataView.scss */
 .sensor_color_circle {
   width: 150px;
   height: 150px;
   -webkit-border-radius: 75px;
   -moz-border-radius: 75px;
   border-radius: 75px; }
+
+.confusionTable td {
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  vertical-align: middle; }
 
 /*# sourceMappingURL=main.css.map */
