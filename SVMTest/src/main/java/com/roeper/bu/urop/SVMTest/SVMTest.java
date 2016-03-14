@@ -2,7 +2,6 @@ package com.roeper.bu.urop.SVMTest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Hashtable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +19,8 @@ public class SVMTest implements Service
 {
 	public static void main(String args[]) throws Exception
 	{
-		String filename = "/home/doug/Desktop/track2_data/sub1.txt.model";
-		FileFeatureProvider provider = new FileFeatureProvider(new File("/home/doug/Desktop/track2_data/sub2.txt.scale"));
+		String filename = "/home/doug/Desktop/deriv.model";
+		FileFeatureProvider provider = new FileFeatureProvider(new File("/home/doug/Desktop/deriv_test.scale"));
 		SVMTest test = new SVMTest(filename, provider);
 		test.start();
 		test.stop();
@@ -50,7 +49,7 @@ public class SVMTest implements Service
 			int correct = 0;
 			int total = 0;
 			Optional<Feature> optFeature = Optional.absent();
-			Hashtable<String, Integer> confusionStats = new Hashtable<String, Integer>();
+			int[][] confusionStats = new int[model.label.length][model.label.length];
 			while ((optFeature = provider.getFeature()).isPresent())
 			{
 				Feature feature = optFeature.get();
@@ -70,21 +69,20 @@ public class SVMTest implements Service
 				}
 				total++;
 				
-				
-				String key = feature.getClassId() + "-" + (int)predicted;
-				if (!confusionStats.containsKey(key))
-				{
-					confusionStats.put(key, 0);
-				}
-				confusionStats.put(key, confusionStats.get(key) + 1);
+				confusionStats[feature.getClassId()][(int)predicted]++;
 			}
 			
 			logger.info("Correct percent: {}", ((float)correct / total));
 			
 			logger.info("Confusion:");
-			for (String key : confusionStats.keySet())
+			for (int i = 0; i < confusionStats.length; i++)
 			{
-				logger.info("{},{}", key, confusionStats.get(key));
+				String forClass = "";
+				for (int j = 0; j < confusionStats.length; j++)
+				{
+					forClass += confusionStats[i][j] + ",";
+				}
+				System.out.println("[" + forClass + "],");
 			}
 			
 		}

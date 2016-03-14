@@ -2,6 +2,8 @@
 # BU UROP
 # 
 # Converts sensor data file(s) and optitrack file(s) into SVM ready data points
+#
+# Use: for f in *.csv; do tail -n +2 $f | sed -e 's/"//g' | sed -r -e 's/[0-9]+,[0-9]+,//' >> full.txt; done
 
 rm(list = ls())
 
@@ -23,7 +25,7 @@ sensorStartTimes <- c(1456450336081,1456450519513,1456450754459,1456450931828,14
 sensorEndTimes <- c(1456450385980,1456450581633,1456450823245,1456451051018,1456452244232,1456452462100,1456452586229,1456452676624)
 optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
 optiEndTimes <- c(6674,7627,8551,13500,12417,8644,8381,6328)
-trimStart <- c(5,5,5,5,5,5,5,5)
+trimStart <- c(20,20,20,20,20,20,20,20)
 trimEnd <- c(50,50,50,50,50,75,50,50)
 backgroundFile <- "background.txt"
 
@@ -113,6 +115,9 @@ for (i in 1:length(sensorFiles))
   
   ### TRANSFORMATIONS ###
   # Calculate additional features
+  # smmoth data
+  syncedData <- features_apply_sensorwise_arg(syncedData, uniqueSensors, features_gaussian_smooth, "", "", 3)
+  # calc derivative
   syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
   
   # trim data
@@ -130,11 +135,14 @@ for (i in 1:length(sensorFiles))
     ggsave(paste(outputName, "opti_orig.png", sep=""), width = graphWidthInch, height = graphHeightInch)
     
     # Plot synced data
+    
     # create sensor data plot
     meltedSensor <- melt(syncedData[, c(uniqueSensors, "t")], id=c("t"))
+    #meltedSensor <- melt(syncedData[, c("0-5", "t")], id=c("t"))
     sensorPlot <- ggplot(data=meltedSensor, aes(x=t, y=value, color=variable)) + geom_line()
     # create sensor data plot
     meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
+    #meltedSensorDeriv <- melt(syncedData[, c(paste("0-5", feature_derivative, sep=""), "t")], id=c("t"))
     sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
     # create class plot
     meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
