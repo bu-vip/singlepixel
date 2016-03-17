@@ -116,7 +116,7 @@ for (i in 1:length(sensorFiles))
   ### TRANSFORMATIONS ###
   # Calculate additional features
   # smmoth data
-  syncedData <- features_apply_sensorwise_arg(syncedData, uniqueSensors, features_gaussian_smooth, "", "", 3)
+  syncedData <- features_apply_sensorwise_arg2(syncedData, uniqueSensors, features_lowpass_filter, "", "", 2, 0.4)
   # calc derivative
   syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
   

@@ -1,15 +1,16 @@
 package com.roeper.bu.urop.lib;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 
@@ -17,11 +18,10 @@ public class ObjectReader<T> implements Iterator<T>, Service
 {
 	final Logger logger = LoggerFactory.getLogger(ObjectReader.class);
 	private File inputFile;
-	private ObjectMapper mapper;
-	private long linesReadCount = 0;
-	private BufferedReader bufferedReader;
 	private Optional<T> next;
 	private Class<T> classVar;
+	private ObjectMapper mapper;
+	private JsonParser reader;
 
 	public ObjectReader(ObjectMapper aMapper, File aInputFile, Class<T> aClassVar) 
 	{
@@ -32,7 +32,11 @@ public class ObjectReader<T> implements Iterator<T>, Service
 	
 	public void start() throws Exception
 	{
-		bufferedReader = new BufferedReader(new FileReader(inputFile));
+		JsonFactory f = new JsonFactory();
+		this.reader = f.createParser(this.inputFile);
+		// advance stream to START_ARRAY first:
+		this.reader.nextToken();
+
 		next = readNext();
 	}
 
@@ -53,25 +57,18 @@ public class ObjectReader<T> implements Iterator<T>, Service
 		Optional<T> optRead = Optional.absent();
 		try
 		{
-			// get next line
-			String line;
-			while  ((line = bufferedReader.readLine()) != null)
-			{
-				// parse line if read
-				T reading = this.mapper.readValue(line, classVar);
-				optRead = Optional.of(reading);
-				linesReadCount++;
-				
-				if (optRead.isPresent())
-				{
-					break;
-				}
+			// and then each time, advance to opening START_OBJECT
+			if (this.reader.nextToken() == JsonToken.START_OBJECT) {
+				T next = mapper.readValue(this.reader, classVar);
+			   // process
+			   // after binding, stream points to closing END_OBJECT
+				optRead = Optional.of(next);
 			}
 		}
 		catch (JsonParseException ea)
 		{
 			ea.printStackTrace();
-			throw new RuntimeException("Invalid reading at line " + linesReadCount);
+			throw new RuntimeException("Invalid reading");
 		}
 		catch (IOException e)
 		{
@@ -89,17 +86,6 @@ public class ObjectReader<T> implements Iterator<T>, Service
 
 	public void stop() throws Exception
 	{
-		if (bufferedReader != null)
-		{
-			try
-			{
-				// Always close files.
-				bufferedReader.close();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-		}
+		this.reader.close();
 	}
 }

@@ -1,18 +1,20 @@
 package com.roeper.bu.urop.lib;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvFactory;
+import com.fasterxml.jackson.dataformat.csv.CsvGenerator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 
 /**
  * Writes objects to file in JSON. File contains an array of JSON objects.
@@ -24,107 +26,85 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ObjectWriter<T> implements Service
 {
-	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
-	private ObjectMapper mapper;
-	private File destination;
-	private final BlockingQueue<T> buffer = new LinkedBlockingQueue<T>();
-	private final Thread worker = (new Thread(new WriteReadingsWorker()));
-	private final AtomicBoolean shouldStop = new AtomicBoolean(false);
-
-	public ObjectWriter(ObjectMapper aMapper,
-						File aDestination)
+	public enum Format
 	{
-		this.mapper = aMapper;
+		JSON, CSV
+	}
+
+	final Logger logger = LoggerFactory.getLogger(ObjectWriter.class);
+	private File destination;
+	private Format format;
+	private JsonGenerator writer;
+	private Class<T> classVar;
+
+	public ObjectWriter(File aDestination,
+						Format aFormat, Class<T> aClassVar)
+	{
 		this.destination = aDestination;
+		this.format = aFormat;
+		this.classVar = aClassVar;
 	}
 
 	public void start() throws Exception
 	{
-		worker.start();
+		if (this.format == Format.JSON)
+		{
+			JsonFactory f = new JsonFactory();
+			this.writer = f.createGenerator(this.destination,
+											JsonEncoding.UTF8);
+			this.writer.setCodec(new ObjectMapper());
+			this.writer.writeStartArray();
+		}
+		else if (this.format == Format.CSV)
+		{
+			CsvFactory factory = new CsvFactory();
+			CsvGenerator generator = factory.createGenerator(	this.destination,
+																JsonEncoding.UTF8);
+			CsvMapper mapper = new CsvMapper();
+			CsvSchema schema = (mapper.schemaFor(this.classVar)).withHeader();
+			generator.setSchema(schema);
+			generator.setCodec(mapper);
+			this.writer = generator;
+		}
+		else
+		{
+			throw new RuntimeException("Unknown format");
+		}
 	}
 
 	public void write(T aReading)
 	{
-		shouldStop.set(false);
-		buffer.add(aReading);
+		try
+		{
+			this.writer.writeObject(aReading);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public void stop() throws Exception
 	{
-		shouldStop.set(true);
-		this.worker.join(5000);
-	}
-
-	private class WriteReadingsWorker implements Runnable
-	{
-
-		public void run()
+		if (this.format == Format.JSON)
 		{
-			BufferedWriter bw = null;
-			RandomAccessFile randomAccessWriter = null;
 			try
 			{
-				// creates a new file
-				bw = new BufferedWriter(new FileWriter(	destination,
-														false));
-				// write [ for the start of the array
-				bw.write("[");
-				bw.flush();
-
-				while (!shouldStop.get() || !buffer.isEmpty())
-				{
-					T reading = buffer.take();
-					String toWrite = mapper.writeValueAsString(reading);
-					bw.write(toWrite + ",");
-					bw.newLine();
-					bw.flush();
-				}
-				// close buffered writer
-				bw.close();
-				bw = null;
-
-				// create a random access writer to overwrite the end of the
-				// file
-				randomAccessWriter = new RandomAccessFile(	destination,
-															"rw");
-				// Set write pointer to the end of the file
-				randomAccessWriter.seek(randomAccessWriter.length() - 2);
-				// overwrite the last "," with a "]"
-				randomAccessWriter.write(']');
+				this.writer.writeEndArray();
 			}
-			catch (InterruptedException e)
+			catch (JsonGenerationException expected)
 			{
-				e.printStackTrace();
-			}
-			catch (IOException ioe)
-			{
-				ioe.printStackTrace();
-				throw new RuntimeException("Error writing file");
-			}
-			finally
-			{
-				if (bw != null)
-				{
-					try
-					{
-						bw.close();
-					}
-					catch (IOException ioe2)
-					{
-					}
-				}
-				if (randomAccessWriter != null)
-				{
-					try
-					{
-						randomAccessWriter.close();
-					}
-					catch (IOException ioe2)
-					{
-					}
-				}
+				//TODO figure out why this happens
 			}
 		}
+		else if (this.format == Format.CSV)
+		{
 
+		}
+		else
+		{
+			throw new RuntimeException("Unknown format type");
+		}
+		this.writer.close();
 	}
 }

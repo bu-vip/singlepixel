@@ -1,3 +1,5 @@
+library(signal)
+
 # Compute the luminance based on a RGB value
 features_calc_luminance <- function(red, green, blue)
 {
@@ -44,6 +46,12 @@ features_gaussian_smooth <- function(radius, values)
   return(smoothed)
 }
 
+features_lowpass_filter <- function(a, b, values) {
+  lowPassFilter <- butter(a, b, type="low")
+  filtered <-filter(lowPassFilter, values)
+  return(filtered)
+}
+
 # Applys a function to all sensor signals individually
 features_apply_sensorwise <- function(sensorData, sensorNames, func, inVar, outVar)
 {
@@ -67,6 +75,20 @@ features_apply_sensorwise_arg <- function(sensorData, sensorNames, func, inVar, 
     resultName <- paste(sensorName, outVar, sep="")
     input <- sensorData[, inputName]
     sensorData[resultName] <- func(arg1, input)[1:length(input)]
+  }
+  
+  return(sensorData)
+}
+
+# Applys a function to all sensor signals individually
+features_apply_sensorwise_arg2 <- function(sensorData, sensorNames, func, inVar, outVar, arg1, arg2)
+{
+  for (sensorName in sensorNames)
+  {
+    inputName <- paste(sensorName, inVar, sep="")
+    resultName <- paste(sensorName, outVar, sep="")
+    input <- sensorData[, inputName]
+    sensorData[resultName] <- func(arg1, arg2, input)[1:length(input)]
   }
   
   return(sensorData)

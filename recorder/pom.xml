@@ -10,7 +10,7 @@
 	</properties>
 
 	<dependencies>
-			<dependency>
+		<dependency>
 			<groupId>com.roeper.bu.urop</groupId>
 			<artifactId>lib</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
@@ -78,6 +78,12 @@
 			<artifactId>activemq-mqtt</artifactId>
 			<version>5.13.0</version>
 			<scope>test</scope>
+		</dependency>
+		<!-- TODO -->
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>2.33</version>
 		</dependency>
 	</dependencies>
 

@@ -21,7 +21,7 @@ public class Recorder
 {
 	public static void main(String args[]) throws Exception
 	{
-		if (args.length == 2)
+		if (args.length == 3)
 		{
 			// get the config
 			BrokerConfig brokerConfig = null;
@@ -37,7 +37,7 @@ public class Recorder
 			}
 
 			RecorderModuleConfig config = new RecorderModuleConfig(	brokerConfig,
-																	args[1]);
+																	args[1], args[2]);
 
 			Injector injector = Guice.createInjector(new RecorderModule(config));
 
@@ -65,7 +65,7 @@ public class Recorder
 		}
 		else
 		{
-			System.out.println("Usage: <config-file> <output-dir>");
+			System.out.println("Usage: <config-file> <output-dir> <format (JSON|CSV)>");
 		}
 	}
 

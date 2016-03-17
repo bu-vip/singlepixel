@@ -6,7 +6,6 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -42,6 +41,7 @@ public class RecorderModule extends AbstractModule
 	@Singleton
 	public MqttClient getClient()
 	{
+		//TODO make this a service
 		MqttClient client = null;
 		try
 		{
@@ -62,7 +62,7 @@ public class RecorderModule extends AbstractModule
 	}
 
 	@Provides
-	public ObjectWriter<SensorReading> getWriter(ObjectMapper aMapper)
+	public ObjectWriter<SensorReading> getWriter()
 	{
 		// create the reading writer
 		String filename = "take-" + System.currentTimeMillis() + ".txt";
@@ -75,6 +75,6 @@ public class RecorderModule extends AbstractModule
 							.mkdirs();
 		}
 
-		return new ObjectWriter<SensorReading>(aMapper, destinationFile);
+		return new ObjectWriter<SensorReading>(destinationFile, ObjectWriter.Format.valueOf(this.config.getOutputFormat()), SensorReading.class);
 	}
 }
