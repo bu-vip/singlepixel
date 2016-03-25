@@ -105,7 +105,7 @@
 									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.roeper.bu.urop.svmLive.SVMLive</mainClass>
+									<mainClass>com.roeper.bu.urop.SVMTest.SVMTest</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>

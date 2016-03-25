@@ -58,6 +58,7 @@ public class Recorder
 			// start recorder
 			recorder.start();
 			
+			//wait for user to stop
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 	        System.out.print("Press enter to stop");
 	        br.readLine();

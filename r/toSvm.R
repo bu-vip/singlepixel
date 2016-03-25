@@ -2,8 +2,6 @@
 # BU UROP
 # 
 # Converts sensor data file(s) and optitrack file(s) into SVM ready data points
-#
-# Use: for f in *.csv; do tail -n +2 $f | sed -e 's/"//g' | sed -r -e 's/[0-9]+,[0-9]+,//' >> full.txt; done
 
 rm(list = ls())
 
@@ -16,23 +14,36 @@ library(gridExtra)
 source("sync.R")
 source("features.R")
 
-dataPath <- "/home/doug/Desktop/UROP/track2/data/"
+# dataPath <- "/home/doug/Desktop/UROP/track2/data/"
+# sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
+# optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json", "take4_opti.json", "take5_opti.json", "take6_opti.json", "take7_opti.json", "take8_opti.json")
+# outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
+# outputFolder <- "/home/doug/Desktop/UROP/track2/r_out/"
+# sensorStartTimes <- c(1456450336081,1456450519513,1456450754459,1456450931828,1456452135556,1456452392004,1456452517247,1456452624509)
+# sensorEndTimes <- c(1456450385980,1456450581633,1456450823245,1456451051018,1456452244232,1456452462100,1456452586229,1456452676624)
+# optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
+# optiEndTimes <- c(6674,7627,8551,13500,12417,8644,8381,6328)
+# trimStart <- c(20,20,20,20,20,20,20,20)
+# trimEnd <- c(50,50,50,50,50,75,50,50)
+# backgroundFile <- "background.txt"
+
+dataPath <- "/home/doug/Desktop/UROP/track3/data/"
+outputFolder <- "/home/doug/Desktop/UROP/track3/r_out/"
 sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
-optiFiles <- c("take1_opti.json", "take2_opti.json", "take3_opti.json", "take4_opti.json", "take5_opti.json", "take6_opti.json", "take7_opti.json", "take8_opti.json")
+optiFiles <- c("take1.json", "take2.json", "take3.json", "take4.json", "take5.json", "take6.json", "take7.json", "take8.json")
 outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
-outputFolder <- "/home/doug/Desktop/UROP/track2/r_out/"
-sensorStartTimes <- c(1456450336081,1456450519513,1456450754459,1456450931828,1456452135556,1456452392004,1456452517247,1456452624509)
-sensorEndTimes <- c(1456450385980,1456450581633,1456450823245,1456451051018,1456452244232,1456452462100,1456452586229,1456452676624)
-optiStartTimes <- c(1690,1417,1689,1598,1546,1629,1482,1127)
-optiEndTimes <- c(6674,7627,8551,13500,12417,8644,8381,6328)
+sensorStartTimes <- c(1457099620695,1457099804113,1457099959354,1457100155300,1457100282360,1457100437905,1457100816664,1457101166428)
+sensorEndTimes <- c(1457099702808,1457099895722,1457100107828,1457100228728,1457100389928,1457100716470,1457100985237,1457101233996)
+optiStartTimes <- c(1483,1364,1286,1470,1404,1563,1692,1235)
+optiEndTimes <- c(9702,10532,16128,8815,12159,29418,18545,7999)
 trimStart <- c(20,20,20,20,20,20,20,20)
-trimEnd <- c(50,50,50,50,50,75,50,50)
+trimEnd <- c(50,50,50,50,50,50,75,50)
 backgroundFile <- "background.txt"
 
 
 # Config options
 feature_derivative <- "deriv"
-shouldGraph <- 1
+shouldGraph <- 0
 graphWidthInch <- 8
 graphHeightInch <- 6
 graphWidthPx <- 1200
@@ -44,24 +55,24 @@ backgroundFileName <- paste(dataPath, backgroundFile, sep="")
 
 
 # find the max and min of the optitrack data across all samples
-optMinX <- 999999
-optMaxX <- -999999
-optMinZ <- 999999
-optMaxZ <- -999999
-for (i in 1:length(sensorFiles))
-{
-  optiFileName <- paste(dataPath, optiFiles[i], sep="")
-  optiDataStartTime <- optiStartTimes[i]
-  optiDataEndTime <- optiEndTimes[i]
-  
-  optiData <- fromJSON(readChar(optiFileName, file.info(optiFileName)$size))
-  optiData <- optiData[optiData$frameIndex >= optiDataStartTime & optiData$frameIndex <= optiDataEndTime, ]
-  
-  optMinX <- pmin(min(optiData$x), optMinX)
-  optMaxX <- pmax(max(optiData$x), optMaxX)
-  optMinZ <- pmin(min(optiData$z), optMinZ)
-  optMaxZ <- pmax(max(optiData$z), optMaxZ)
-}
+# optMinX <- 999999
+# optMaxX <- -999999
+# optMinZ <- 999999
+# optMaxZ <- -999999
+# for (i in 1:length(sensorFiles))
+# {
+#   optiFileName <- paste(dataPath, optiFiles[i], sep="")
+#   optiDataStartTime <- optiStartTimes[i]
+#   optiDataEndTime <- optiEndTimes[i]
+#   
+#   optiData <- fromJSON(readChar(optiFileName, file.info(optiFileName)$size))
+#   optiData <- optiData[optiData$frameIndex >= optiDataStartTime & optiData$frameIndex <= optiDataEndTime, ]
+#   
+#   optMinX <- pmin(min(optiData$x), optMinX)
+#   optMaxX <- pmax(max(optiData$x), optMaxX)
+#   optMinZ <- pmin(min(optiData$z), optMinZ)
+#   optMaxZ <- pmax(max(optiData$z), optMaxZ)
+# }
 
 
 # calculate background sensor readings
@@ -98,16 +109,17 @@ for (i in 1:length(sensorFiles))
   # calculate luminance
   sensData$luminance <- features_calc_luminance(sensData$red, sensData$green, sensData$blue)
   # background subtraction
-  sensData$luminance <- (sensData$luminance - backgroundMean)
+  # TODO sensor wise background subtraction
+  # sensData$luminance <- (sensData$luminance - backgroundMean)
   
   ### CLASSES ###
   # calculate class for optitrack data
-  quantizeLevels <- 3
-  optLevelSizeX <- (optMaxX - optMinX) / quantizeLevels
-  optLevelSizeZ <- (optMaxZ - optMinZ) / quantizeLevels
+  #quantizeLevels <- 3
+  #optLevelSizeX <- (optMaxX - optMinX) / quantizeLevels
+  #optLevelSizeZ <- (optMaxZ - optMinZ) / quantizeLevels
   # ensure inside class boundaries
-  optiData$class <- pmin(floor((optiData$x - optMinX) / optLevelSizeX), quantizeLevels - 1)
-  optiData$class <- optiData$class + pmin(floor((optiData$z - optMinZ) / optLevelSizeZ), quantizeLevels - 1) * quantizeLevels
+  #optiData$class <- pmin(floor((optiData$x - optMinX) / optLevelSizeX), quantizeLevels - 1)
+  #optiData$class <- optiData$class + pmin(floor((optiData$z - optMinZ) / optLevelSizeZ), quantizeLevels - 1) * quantizeLevels
   
   ### SYNC ###
   # Sync optitrack and sensor data
@@ -116,9 +128,9 @@ for (i in 1:length(sensorFiles))
   ### TRANSFORMATIONS ###
   # Calculate additional features
   # smmoth data
-  syncedData <- features_apply_sensorwise_arg2(syncedData, uniqueSensors, features_lowpass_filter, "", "", 2, 0.4)
+  #syncedData <- features_apply_sensorwise_arg2(syncedData, uniqueSensors, features_lowpass_filter, "", "", 2, 0.8)
   # calc derivative
-  syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
+  #syncedData <- features_apply_sensorwise(syncedData, uniqueSensors, features_calc_derivative, "", feature_derivative)
   
   # trim data
   syncedData <- syncedData[-seq(0, numberSamplesToRemoveStart, by=1), ]
@@ -141,23 +153,24 @@ for (i in 1:length(sensorFiles))
     #meltedSensor <- melt(syncedData[, c("0-5", "t")], id=c("t"))
     sensorPlot <- ggplot(data=meltedSensor, aes(x=t, y=value, color=variable)) + geom_line()
     # create sensor data plot
-    meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
+    #meltedSensorDeriv <- melt(syncedData[, c(paste(uniqueSensors, feature_derivative, sep=""), "t")], id=c("t"))
     #meltedSensorDeriv <- melt(syncedData[, c(paste("0-5", feature_derivative, sep=""), "t")], id=c("t"))
-    sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
+    #sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
     # create class plot
     meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
     classPlot <- ggplot(data=meltedClass, aes(x=t, y=value, color=variable)) + geom_line()
     # save to png
     png(paste(outputName, "synced.png", sep=""), width=graphWidthPx, height=graphHeightPx)
-    grid.arrange(sensorPlot, sensorDerivPlot, classPlot, ncol=1)
+    grid.arrange(sensorPlot, classPlot, ncol=1)
+    #grid.arrange(sensorPlot, sensorDerivPlot, classPlot, ncol=1)
     dev.off()
   }
   
   ### OUTPUT ###
   # write data to json file
-  jsonFile <- file(paste(outputName, "synced.json", sep=""))
-  writeLines(toJSON(syncedData, pretty=FALSE), jsonFile)
-  close(jsonFile)
+  #jsonFile <- file(paste(outputName, "synced.json", sep=""))
+  #writeLines(toJSON(syncedData, pretty=FALSE), jsonFile)
+  #close(jsonFile)
   # write to csv
-  write.csv(syncedData, file=paste(outputName, "synced.csv", sep=""))
+  write.csv(syncedData[, !(names(syncedData) %in% c("t"))], file=paste(outputName, "synced.csv", sep=""), row.names=FALSE)
 }

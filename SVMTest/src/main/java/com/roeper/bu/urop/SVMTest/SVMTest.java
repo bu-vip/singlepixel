@@ -19,20 +19,28 @@ public class SVMTest implements Service
 {
 	public static void main(String args[]) throws Exception
 	{
-		String filename = "/home/doug/Desktop/deriv.model";
-		FileFeatureProvider provider = new FileFeatureProvider(new File("/home/doug/Desktop/deriv_test.scale"));
-		SVMTest test = new SVMTest(filename, provider);
-		test.start();
-		test.stop();
+		if (args.length == 2)
+		{
+			FileFeatureProvider provider = new FileFeatureProvider(new File(args[1]));
+			SVMTest test = new SVMTest(	args[0],
+										provider);
+			test.start();
+			test.stop();
+		}
+		else
+		{
+			System.out.println("Usage: <model-file> <data-file>");
+		}
 	}
-	
+
 	final Logger logger = LoggerFactory.getLogger(SVMTest.class);
-	
+
 	private svm_model model;
 	private String modelFileName;
 	private FileFeatureProvider provider;
-	
-	public SVMTest(String aFileName, FileFeatureProvider aProvider)
+
+	public SVMTest(	String aFileName,
+					FileFeatureProvider aProvider)
 	{
 		this.modelFileName = aFileName;
 		this.provider = aProvider;
@@ -43,9 +51,9 @@ public class SVMTest implements Service
 		try
 		{
 			model = svm.svm_load_model(modelFileName);
-			
+
 			provider.start();
-			
+
 			int correct = 0;
 			int total = 0;
 			Optional<Feature> optFeature = Optional.absent();
@@ -60,20 +68,22 @@ public class SVMTest implements Service
 					nodes[i].index = feature.getIndexes()[i];
 					nodes[i].value = feature.getFeatures()[i];
 				}
-				
-				double predicted = svm.svm_predict(this.model, nodes);
-				
+
+				double predicted = svm.svm_predict(	this.model,
+													nodes);
+
 				if (feature.getClassId() == predicted)
 				{
 					correct++;
 				}
 				total++;
-				
-				confusionStats[feature.getClassId()][(int)predicted]++;
+
+				confusionStats[feature.getClassId()][(int) predicted]++;
 			}
-			
-			logger.info("Correct percent: {}", ((float)correct / total));
-			
+
+			logger.info("Correct percent: {}",
+						((float) correct / total));
+
 			logger.info("Confusion:");
 			for (int i = 0; i < confusionStats.length; i++)
 			{
@@ -84,7 +94,7 @@ public class SVMTest implements Service
 				}
 				System.out.println("[" + forClass + "],");
 			}
-			
+
 		}
 		catch (IOException e)
 		{
@@ -96,5 +106,5 @@ public class SVMTest implements Service
 	{
 		provider.stop();
 	}
-	
+
 }

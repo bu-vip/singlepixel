@@ -23,11 +23,16 @@ sync_sensor_optitrack <- function(sensorData, sensorStartTime, sensorEndTime, op
   }
   
   # resample the optitrack data
-  optSampled <- resample(optitrackData$class, minReadingCount, nrow(optitrackData))
+  #optSampled <- resample(optitrackData$class, minReadingCount, nrow(optitrackData))
+  optSampledX <- resample(optitrackData$x, minReadingCount, nrow(optitrackData))
+  optSampledY <- resample(optitrackData$y, minReadingCount, nrow(optitrackData))
+  optSampledZ <- resample(optitrackData$z, minReadingCount, nrow(optitrackData))
   
   # create a dataframe with all synced data
   syncedData <- data.frame(t=seq(1, minReadingCount, by=1))
-  syncedData$class <- round(optSampled)
+  #syncedData$class <- round(optSampled)
+  syncedData$x <- optSampledX
+  syncedData$z <- optSampledZ
   for (groupSensorId in uniqueSensors)
   {
     # resize sensor signals to be the same size
