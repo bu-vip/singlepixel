@@ -6,16 +6,20 @@ dataDirectory = 'data/track2/'
 svmParams = '-m 3000 -s 3 -q'
 featureDerivative = 0
 featureDerivConv = [-1, 0, 1]
-gridMinC = -5
-gridMaxC = 5
-gridMinG = -5
+gridMinC = -15
+gridMaxC = 15
+gridStepC = 1
+gridMinG = -15
 gridMaxG = 0
+gridStepG = 1
 
 bestcX = 3.0518e-05;
 bestcY = 3.0518e-05;
 bestgX = 3.0518e-05;
 bestgY = 3.0518e-05;
 doGridSearch = 1;
+
+makeMovie = 1;
 
 
 % Get files in directory
@@ -74,13 +78,15 @@ groupTrain = (groupTrain .* 2) .- 1;
 groupTest = (groupTest - repmat(minimums, size(groupTest, 1), 1)) ./ repmat(ranges, size(groupTest, 1), 1);
 groupTest = (groupTest .* 2) .- 1;
 
-function [bestc, bestg] = gridSearch(svmParams, labels, features, minLogC, maxLogC, minLogG, maxLogG)
-  bestcv = 0;
-  for log2c = minLogC:maxLogC
-    for log2g = minLogG:maxLogG
+function [bestc, bestg] = gridSearch(svmParams, labels, features, minLogC, maxLogC, stepLogC, minLogG, maxLogG, stepLogG)
+  bestcv = 999999;
+  bestc = 99999;
+  bestg = 99999;
+  for log2c = minLogC:stepLogC:maxLogC
+    for log2g = minLogG:stepLogG:maxLogG
       cmd = [svmParams, ' -v 5 -c ', num2str(2^log2c), ' -g ', num2str(2^log2g)];
       cv = svmtrain(labels, features, cmd);
-      if (cv >= bestcv)
+      if (cv < bestcv)
         bestcv = cv; bestc = 2^log2c; bestg = 2^log2g;
       end
       fprintf('%g %g %g (best c=%g, g=%g, rate=%g)\n', log2c, log2g, cv, bestc, bestg, bestcv);
@@ -99,8 +105,8 @@ groupTrainLabelY = groupTrain(:, [2]);
 groupTrainFeatures = groupTrain(:, 3:columns(groupTrain));
 if (doGridSearch == 1)
   % parameter tuning
-  [bestcX, bestgX] = gridSearch(svmParams, groupTrainLabelX, groupTrainFeatures, gridMinC, gridMaxC, gridMinG, gridMaxG);
-  [bestcY, bestgY] = gridSearch(svmParams, groupTrainLabelY, groupTrainFeatures, gridMinC, gridMaxC, gridMinG, gridMaxG);
+  [bestcX, bestgX] = gridSearch(svmParams, groupTrainLabelX, groupTrainFeatures, gridMinC, gridMaxC, gridStepC, gridMinG, gridMaxG, gridStepG);
+  [bestcY, bestgY] = gridSearch(svmParams, groupTrainLabelY, groupTrainFeatures, gridMinC, gridMaxC, gridStepC, gridMinG, gridMaxG, gridStepG);
 end
 
 % train model and test
@@ -116,15 +122,20 @@ std(predictedX)
 std(predictedY)
 
 
-% convert to movie using 'ffmpeg -i "%d5.png" -y output.mpeg'
-set(0, 'defaultfigurevisible', 'off');
-for i=1:rows(predictedX)
-  axis([-2, 2 -2 2]);
-  rectangle('Position',[predictedX(i) predictedY(i) 0.1 0.1],'Curvature',[1,1], 'FaceColor', 'green');
-  rectangle('Position',[groupTestLabelX(i) groupTestLabelY(i) 0.1 0.1],'Curvature',[1,1], 'FaceColor', 'red');
-  filename=sprintf('output/%05d.png',i);
-  print(filename);
-  clf
+% convert to movie using 'ffmpeg -i "%5d.png" -y output.mpeg'
+if (makeMovie == 1)
+  mkdir('/tmp/UROP/');
+  mkdir('/tmp/UROP/octave/');
+  mkdir('/tmp/UROP/octave/output/');
+  set(0, 'defaultfigurevisible', 'off');
+  for i=1:rows(predictedX)
+    clf
+    axis([-2, 2 -2 2]);
+    rectangle('Position',[predictedX(i) predictedY(i) 0.1 0.1],'Curvature',[1,1], 'FaceColor', 'green');
+    rectangle('Position',[groupTestLabelX(i) groupTestLabelY(i) 0.1 0.1],'Curvature',[1,1], 'FaceColor', 'red');
+    filename=sprintf('/tmp/UROP/octave/output/%05d.png',i);
+    print(filename);
+  end
 end
 
 
