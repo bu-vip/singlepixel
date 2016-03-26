@@ -2,18 +2,18 @@ package com.roeper.bu.urop.readings.sync;
 
 public class Feature
 {
-	private int classId;
+	private double classId;
 	private int [] indexes;
 	private double [] features;
 	
-	public Feature(int aClassId, int[] aIndexes, double [] aFeatures)
+	public Feature(double aClassId, int[] aIndexes, double [] aFeatures)
 	{
 		this.classId = aClassId;
 		this.indexes = aIndexes;
 		this.features = aFeatures;
 	}
 
-	public int getClassId()
+	public double getClassId()
 	{
 		return classId;
 	}

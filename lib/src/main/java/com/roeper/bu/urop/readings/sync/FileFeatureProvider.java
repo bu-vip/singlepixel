@@ -40,7 +40,7 @@ public class FileFeatureProvider
 				String[] values = line.split(" ");
 				if (values.length > 1)
 				{
-					int classId = Integer.parseInt(values[0]);
+					double classId = Double.parseDouble(values[0]);
 					
 					int indexes[] = new int[values.length - 1];
 					double features[] = new double[values.length - 1];
