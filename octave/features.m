@@ -3,7 +3,7 @@ clear
 more off;
 
 dataDirectory = 'data/track2/'
-svmParams = '-m 3000 -s 3 -q'
+svmParams = '-m 10000 -s 3 -q'
 featureDerivative = 0
 featureDerivConv = [-1, 0, 1]
 gridMinC = -15
