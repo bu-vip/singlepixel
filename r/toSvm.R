@@ -5,6 +5,8 @@
 
 rm(list = ls())
 
+setwd("~/Development/UROP_SinglePixelLocalization/r/")
+
 library(jsonlite)
 library(ggplot2)
 library(reshape2)
@@ -27,18 +29,31 @@ source("features.R")
 # trimEnd <- c(50,50,50,50,50,75,50,50)
 # backgroundFile <- "background.txt"
 
-dataPath <- "/home/doug/Desktop/UROP/track3/data/"
-outputFolder <- "/home/doug/Desktop/UROP/track3/r_out/"
-sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
-optiFiles <- c("take1.json", "take2.json", "take3.json", "take4.json", "take5.json", "take6.json", "take7.json", "take8.json")
-outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
-sensorStartTimes <- c(1457099620695,1457099804113,1457099959354,1457100155300,1457100282360,1457100437905,1457100816664,1457101166428)
-sensorEndTimes <- c(1457099702808,1457099895722,1457100107828,1457100228728,1457100389928,1457100716470,1457100985237,1457101233996)
-optiStartTimes <- c(1483,1364,1286,1470,1404,1563,1692,1235)
-optiEndTimes <- c(9702,10532,16128,8815,12159,29418,18545,7999)
-trimStart <- c(20,20,20,20,20,20,20,20)
-trimEnd <- c(50,50,50,50,50,50,75,50)
-backgroundFile <- "background.txt"
+# dataPath <- "/home/doug/Desktop/UROP/track3/data/"
+# outputFolder <- "/home/doug/Desktop/UROP/track3/r_out/"
+# sensorFiles <- c("take1.txt", "take2.txt", "take3.txt", "take4.txt", "take5.txt", "take6.txt", "take7.txt", "take8.txt")
+# optiFiles <- c("take1.json", "take2.json", "take3.json", "take4.json", "take5.json", "take6.json", "take7.json", "take8.json")
+# outputPrefixes <- c("take1-res-", "take2-res-", "take3-res-", "take4-res-", "take5-res-", "take6-res-", "take7-res-", "take8-res-")
+# sensorStartTimes <- c(1457099620695,1457099804113,1457099959354,1457100155300,1457100282360,1457100437905,1457100816664,1457101166428)
+# sensorEndTimes <- c(1457099702808,1457099895722,1457100107828,1457100228728,1457100389928,1457100716470,1457100985237,1457101233996)
+# optiStartTimes <- c(1483,1364,1286,1470,1404,1563,1692,1235)
+# optiEndTimes <- c(9702,10532,16128,8815,12159,29418,18545,7999)
+# trimStart <- c(20,20,20,20,20,20,20,20)
+# trimEnd <- c(50,50,50,50,50,50,75,50)
+# backgroundFile <- "background.txt"
+
+dataPath <- "/home/doug/Desktop/UROP/track4/data/"
+outputFolder <- "/home/doug/Desktop/UROP/track4/r_out/"
+sensorFiles <- c("brian2.txt","brian3.txt","brian4.txt","brian5.txt","doug1.txt","doug2.txt","doug3.txt","doug4.txt","doug5.txt","jiawei2.txt","jiawei3.txt","jiawei4.txt","jiawei5.txt")
+optiFiles <- c("brian2.json","brian3.json","brian4.json","brian5.json","doug1.json","doug2.json","doug3.json","doug4.json","doug5.json","jiawei2.json","jiawei3.json","jiawei4.json","jiawei5.json")
+outputPrefixes <- c("out-brian2-","out-brian3-","out-brian4-","out-brian5-","out-doug1-","out-doug2-","out-doug3-","out-doug4-","out-doug5-","out-jiawei2-","out-jiawei3-","out-jiawei4-","out-jiawei5-")
+sensorStartTimes <- c(1459446598730,1459446826201,1459447018623,1459447131752,1459443995543,1459444147157,1459444268873,1459444444628,1459444605333,1459442956574,1459443075359,1459443217277,1459443359294)
+sensorEndTimes <- c(1459446726608,1459446998016,1459447112863,1459447281345,1459444072511,1459444242308,1459444379881,1459444575838,1459444734119,1459443058087,1459443202630,1459443343436,1459443517171)
+optiStartTimes <- c(1056,401,983,1293,1646,1444,1067,1048,1341,589,666,889,879)
+optiEndTimes <- c(13836,17575,10406,16252,9332,10961,12163,14162,14218,10731,13382,13493,16661)
+trimStart <- c(20,20,20,20,20,20,20,20,20,20,100,20,20)
+trimEnd <- c(50,50,200,50,50,50,50,50,50,50,100,90,50)
+# backgroundFile <- "background.txt"
 
 
 # Config options
@@ -50,7 +65,7 @@ graphWidthPx <- 1200
 graphHeightPx <-900
 
 # Constants
-backgroundFileName <- paste(dataPath, backgroundFile, sep="")
+# backgroundFileName <- paste(dataPath, backgroundFile, sep="")
 
 
 
@@ -76,9 +91,9 @@ backgroundFileName <- paste(dataPath, backgroundFile, sep="")
 
 
 # calculate background sensor readings
-backgroundData <- fromJSON(readChar(backgroundFileName, file.info(backgroundFileName)$size))
-backgroundData$luminance <- features_calc_luminance(backgroundData$red, backgroundData$green, backgroundData$blue)
-backgroundMean <- mean(backgroundData$luminance)
+# backgroundData <- fromJSON(readChar(backgroundFileName, file.info(backgroundFileName)$size))
+# backgroundData$luminance <- features_calc_luminance(backgroundData$red, backgroundData$green, backgroundData$blue)
+# backgroundMean <- mean(backgroundData$luminance)
 
 # process all takes
 for (i in 1:length(sensorFiles))
@@ -157,7 +172,7 @@ for (i in 1:length(sensorFiles))
     #meltedSensorDeriv <- melt(syncedData[, c(paste("0-5", feature_derivative, sep=""), "t")], id=c("t"))
     #sensorDerivPlot <- ggplot(data=meltedSensorDeriv, aes(x=t, y=value, color=variable)) + geom_line()
     # create class plot
-    meltedClass <- melt(syncedData[, c("class", "t")], id=c("t"))
+    meltedClass <- melt(syncedData[, c("x", "z", "t")], id=c("t"))
     classPlot <- ggplot(data=meltedClass, aes(x=t, y=value, color=variable)) + geom_line()
     # save to png
     png(paste(outputName, "synced.png", sep=""), width=graphWidthPx, height=graphHeightPx)
