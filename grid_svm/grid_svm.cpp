@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include <sstream>
+#include <time>
 
 typedef unsigned int uint;
 
@@ -18,6 +19,7 @@ typedef struct _SVMArgs {
   float gMax;
   float gStep;
   char * args;
+  char * name;
 } SVMArgs;
 
 void runJob(SVMArgs aArgs, char * aQueue);
@@ -26,8 +28,9 @@ CGPair calculateBestCGPair(SVMArgs aArgs, uint aMaxJobs);
 
 int main(int argc, char *argv[])
 {
-  if (argc == 10)
+  if (argc == 11)
   {
+      srand(time(NULL));
       uint argNum = 1;
       char * queue = argv[argNum++];
       uint maxJobs = atoi(argv[argNum++]);
@@ -39,6 +42,7 @@ int main(int argc, char *argv[])
       args.gMax = atof(argv[argNum++]);
       args.gStep = atof(argv[argNum++]);
       args.args = argv[argNum++];
+      args.name = argv[argNum++];
 
       CGPair best = calculateBestCGPair(args, maxJobs);
       if (best.c > 0 && best.g > 0)
@@ -52,7 +56,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    std::cout << "Usage: <queue> <maxJobs> <cMin> <cMax> <cStep> <gMin> <gMax> <gStep> \"<other svm args...>\"" << std::endl;
+    std::cout << "Usage: <queue> <maxJobs> <cMin> <cMax> <cStep> <gMin> <gMax> <gStep> \"<other svm args...>\" <name>" << std::endl;
   }
 
   return 0;
@@ -112,6 +116,7 @@ void runJobs(SVMArgs aArgs, CGPair aCGPair, char * aQueue)
       jobArgs.gMax = (gPoint + aCGPair.g) * aArgs.gStep + aArgs.gMin;
       jobArgs.gStep = aArgs.gStep;
       jobArgs.args = aArgs.args;
+      jobArgs.name = aArgs.name;
       runJob(jobArgs, aQueue);
     }
   }
@@ -120,15 +125,38 @@ void runJobs(SVMArgs aArgs, CGPair aCGPair, char * aQueue)
 void runJob(SVMArgs aArgs, char * aQueue)
 {
   int id = rand();
+
+  //name of the output dir
+  std::stringstream outDirSS;
+  outDirSS << outDir.name << "/" << id << "/";
+  std::string outDir = outDirSS.str();
+  //make the output dir
+  std::stringstream mkdirCommand;
+  mkdirCommand << "mkdir -p " << outDir;
+  std::cout << "Running: " << mkdirCommand.str();
+  //system is bad
+  system(mkdirCommand.str().c_str());
+
+  //create the job command
   std::stringstream ss;
-  ss << "qsub -j y -q " << aQueue << " -cwd -b y \"";
+  //join error and output into single files
+  ss << "qsub -j y ";
+  //set output file name
+  ss << "-o " << outDir << "out-" << id << ".log ";
+  //specify queue name
+  ss << "-q " << aQueue;
+  //set current working dir
+  ss << " -cwd ";
+  //give job a name
+  ss << "-n " << aArgs.name << "-" << id;
+  //specify job to run
+  ss << " -b y \"";
   ss << "python libsvm/grid.py -log2c " << aArgs.cMin << "," << aArgs.cMax << "," << aArgs.cStep;
   ss << " -log2g " << aArgs.gMin << "," << aArgs.gMax << "," << aArgs.gStep;
-  ss << " -out " << "out-" << id << ".txt -png " << "out-" << id << ".png ";
+  ss << " -out " << outDir << "out-" << id << ".txt -png " << outDir << "out-" << id << ".png ";
   ss << aArgs.args << "\"";
-
-  std::string command = ss.str();
-  //std::cout << command << std::endl;
+  std::string jobCommand = ss.str();
+  std::cout << "Running: " << command << std::endl;
   //system is bad
-  system(command.c_str());
+  system(jobCommand.c_str());
 }
