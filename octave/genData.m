@@ -14,11 +14,14 @@ function [walkData] = concatAllTakes(data, personIndex)
 end
 
 % splits the data set into labels and features - also makes features sparse
-function [labelsX, labelY, labelsC, features] = splitData(data)
+function [labelsX, labelsY, labelsC, features] = splitData(data)
     labelsX = data(:, [1]);
     labelsY = data(:, [2]);
     features = sparse(data(:, 3:columns(data)));
-    labelsC = labelsX; % TODO
+    grid = 3;
+    quantX = floor((labelsX .+ 1) .* grid ./ 2.01);
+    quantY = floor((labelsY .+ 1) .* grid ./ 2.01) .* grid;
+    labelsC = quantX .+ quantY;
 end
 
 % writes the training and test sets to files for SVC & SVR
@@ -107,27 +110,28 @@ end
 
 % calculate the min and range of the each take
 minimums = [];
-ranges = [];
+maxs = [];
 for person = 1:personCount
     personData = data.(num2str(person));
     for take = 1:personData.takeCount
         takeData = personData.(num2str(take));
         takeMins = min(takeData, [], 1);
-        takeRanges = max(takeData, [], 1) - takeMins;
+        takeMaxs = max(takeData, [], 1);
         minimums = [minimums; takeMins];
-        ranges = [ranges; takeRanges];
+        maxs = [maxs; takeMaxs];
     end
 end
 % calculate the global min and range
 globalMin = min(minimums, [], 1);
-globalRange = max(ranges, [], 1) - globalMin;
+globalRange = max(maxs, [], 1) - globalMin;
 
 % scale the takes between [-1, 1] for SVM purposes
 for person = 1:personCount
     personData = data.(num2str(person));
     for take = 1:personData.takeCount
         takeData = personData.(num2str(take));
-        takeData = (takeData - repmat(globalMin, size(takeData, 1), 1)) ./ repmat(globalRange, size(globalMin, 1), 1);
+        takeData = (takeData - repmat(globalMin, size(takeData, 1), 1)) ./ repmat(globalRange, size(takeData, 1), 1);
+        takeData = (takeData .* 2) .- 1;
         personData.(num2str(take)) = takeData;
     end
     % copy modified person data back into data
@@ -141,9 +145,9 @@ for i = 1:personCount
     testSet = [];
     for person = 1:personCount
         if (person == oddManOut(i))
-            trainSet = concatAllTakes(data, person);
+            testSet = concatAllTakes(data, person);
         else
-            testSet = [testSet; concatAllTakes(data, person)];
+            trainSet = [trainSet; concatAllTakes(data, person)];
         end
     end
     writeData(strcat('output/oneVRest', num2str(i)), trainSet, testSet);
