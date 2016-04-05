@@ -42,23 +42,35 @@ source("features.R")
 # trimEnd <- c(50,50,50,50,50,50,75,50)
 # backgroundFile <- "background.txt"
 
-dataPath <- "/home/doug/Desktop/UROP/track4/data/"
-outputFolder <- "/home/doug/Desktop/UROP/track4/r_out/"
-sensorFiles <- c("brian2.txt","brian3.txt","brian4.txt","brian5.txt","doug1.txt","doug2.txt","doug3.txt","doug4.txt","doug5.txt","jiawei2.txt","jiawei3.txt","jiawei4.txt","jiawei5.txt")
-optiFiles <- c("brian2.json","brian3.json","brian4.json","brian5.json","doug1.json","doug2.json","doug3.json","doug4.json","doug5.json","jiawei2.json","jiawei3.json","jiawei4.json","jiawei5.json")
-outputPrefixes <- c("out-brian2-","out-brian3-","out-brian4-","out-brian5-","out-doug1-","out-doug2-","out-doug3-","out-doug4-","out-doug5-","out-jiawei2-","out-jiawei3-","out-jiawei4-","out-jiawei5-")
-sensorStartTimes <- c(1459446598730,1459446826201,1459447018623,1459447131752,1459443995543,1459444147157,1459444268873,1459444444628,1459444605333,1459442956574,1459443075359,1459443217277,1459443359294)
-sensorEndTimes <- c(1459446726608,1459446998016,1459447112863,1459447281345,1459444072511,1459444242308,1459444379881,1459444575838,1459444734119,1459443058087,1459443202630,1459443343436,1459443517171)
-optiStartTimes <- c(1056,401,983,1293,1646,1444,1067,1048,1341,589,666,889,879)
-optiEndTimes <- c(13836,17575,10406,16252,9332,10961,12163,14162,14218,10731,13382,13493,16661)
-trimStart <- c(20,20,20,20,20,20,20,20,20,20,100,20,20)
-trimEnd <- c(50,50,200,50,50,50,50,50,50,50,100,90,50)
+# dataPath <- "/home/doug/Desktop/UROP/track4/data/"
+# outputFolder <- "/home/doug/Desktop/UROP/track4/r_out/"
+# sensorFiles <- c("brian2.txt","brian3.txt","brian4.txt","brian5.txt","doug1.txt","doug2.txt","doug3.txt","doug4.txt","doug5.txt","jiawei2.txt","jiawei3.txt","jiawei4.txt","jiawei5.txt")
+# optiFiles <- c("brian2.json","brian3.json","brian4.json","brian5.json","doug1.json","doug2.json","doug3.json","doug4.json","doug5.json","jiawei2.json","jiawei3.json","jiawei4.json","jiawei5.json")
+# outputPrefixes <- c("out-brian2-","out-brian3-","out-brian4-","out-brian5-","out-doug1-","out-doug2-","out-doug3-","out-doug4-","out-doug5-","out-jiawei2-","out-jiawei3-","out-jiawei4-","out-jiawei5-")
+# sensorStartTimes <- c(1459446598730,1459446826201,1459447018623,1459447131752,1459443995543,1459444147157,1459444268873,1459444444628,1459444605333,1459442956574,1459443075359,1459443217277,1459443359294)
+# sensorEndTimes <- c(1459446726608,1459446998016,1459447112863,1459447281345,1459444072511,1459444242308,1459444379881,1459444575838,1459444734119,1459443058087,1459443202630,1459443343436,1459443517171)
+# optiStartTimes <- c(1056,401,983,1293,1646,1444,1067,1048,1341,589,666,889,879)
+# optiEndTimes <- c(13836,17575,10406,16252,9332,10961,12163,14162,14218,10731,13382,13493,16661)
+# trimStart <- c(20,20,20,20,20,20,20,20,20,20,100,20,20)
+# trimEnd <- c(50,50,200,50,50,50,50,50,50,50,100,90,50)
 # backgroundFile <- "background.txt"
+
+dataPath <- "/home/doug/Desktop/track5/data/"
+outputFolder <- "/home/doug/Desktop/track5/r_out/"
+sensorFiles <- c("dan1.txt","dan2.txt","dan3.txt","dan4.txt","dan6.txt","doug1.txt","doug2.txt","doug3.txt","doug4.txt","doug5.txt","pablo1.txt","pablo2.txt","pablo3.txt","pablo4.txt","pablo5.txt","jiawei1.txt","jiawei2.txt","jiawei3.txt","jiawei4.txt","jiawei5.txt")
+optiFiles <- c("dan1-opti.json","dan2-opti.json","dan3-opti.json","dan4-opti.json","dan6-opti.json","doug1-opti.json","doug2-opti.json","doug3-opti.json","doug4-opti.json","doug5-opti.json","pablo1-opti.json","pablo2-opti.json","pablo3-opti.json","pablo4-opti.json","pablo5-opti.json","jiawei1-opti.json","jiawei2-opti.json","jiawei3-opti.json","jiawei4-opti.json","jiawei5-opti.json")
+outputPrefixes <- c("dan1-","dan2-","dan3-","dan4-","dan6-","doug1-","doug2-","doug3-","doug4-","doug5-","pablo1-","pablo2-","pablo3-","pablo4-","pablo5-","jiawei1-","jiawei2-","jiawei3-","jiawei4-","jiawei5-")
+optiStartTimes <- c(1080,638,2018,1689,441,1656,1060,1104,1286,1067,1109,1809,1402,1252,11370,931,1046,804,847,892)
+optiEndTimes<- c(12887,12600,14752,15522,12520,13620,13805,16438,15305,13150,11616,12509,12260,14647,23682,11512,11554,11476,11463,11470)
+sensorStartTimes <- c(1459713852421,1459713993940,1459714152994,1459714313387,1459714634062,1459714981191,1459715123497,1459715480233,1459715657992,1459715828080,1459712899002,1459713033335,1459713167769,1459713300587,1459713562183,1459801796925,1459801924390,1459802049227,1459802173465,1459802294868)
+sensorEndTimes <- c(1459713970503,1459714113613,1459714280357,1459714451951,1459714754868,1459715100873,1459715250863,1459715633651,1459715798082,1459715948881,1459713004145,1459713140297,1459713276347,1459713434515,1459713685765,1459801902775,1459802029532,1459802155890,1459802279516,1459802400718)
+trimStart <- c(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20)
+trimEnd <- c(50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50)
 
 
 # Config options
 feature_derivative <- "deriv"
-shouldGraph <- 0
+shouldGraph <- 1
 graphWidthInch <- 8
 graphHeightInch <- 6
 graphWidthPx <- 1200
