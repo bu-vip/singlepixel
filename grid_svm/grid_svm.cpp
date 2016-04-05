@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include <sstream>
-#include <time>
+#include <time.h>
 
 typedef unsigned int uint;
 
@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
   else
   {
     std::cout << "Usage: <queue> <maxJobs> <cMin> <cMax> <cStep> <gMin> <gMax> <gStep> \"<other svm args...>\" <name>" << std::endl;
+    std::cout << "Arg count: " << argc << std::endl;
   }
 
   return 0;
@@ -128,12 +129,12 @@ void runJob(SVMArgs aArgs, char * aQueue)
 
   //name of the output dir
   std::stringstream outDirSS;
-  outDirSS << outDir.name << "/" << id << "/";
+  outDirSS << "out/" << aArgs.name << "/" << id << "/";
   std::string outDir = outDirSS.str();
   //make the output dir
   std::stringstream mkdirCommand;
   mkdirCommand << "mkdir -p " << outDir;
-  std::cout << "Running: " << mkdirCommand.str();
+  std::cout << "Running: " << mkdirCommand.str() << std::endl;
   //system is bad
   system(mkdirCommand.str().c_str());
 
@@ -148,7 +149,7 @@ void runJob(SVMArgs aArgs, char * aQueue)
   //set current working dir
   ss << " -cwd ";
   //give job a name
-  ss << "-n " << aArgs.name << "-" << id;
+  ss << "-N " << aArgs.name << "-" << id;
   //specify job to run
   ss << " -b y \"";
   ss << "python libsvm/grid.py -log2c " << aArgs.cMin << "," << aArgs.cMax << "," << aArgs.cStep;
@@ -156,7 +157,7 @@ void runJob(SVMArgs aArgs, char * aQueue)
   ss << " -out " << outDir << "out-" << id << ".txt -png " << outDir << "out-" << id << ".png ";
   ss << aArgs.args << "\"";
   std::string jobCommand = ss.str();
-  std::cout << "Running: " << command << std::endl;
+  std::cout << "Running: " << jobCommand << std::endl;
   //system is bad
   system(jobCommand.c_str());
 }

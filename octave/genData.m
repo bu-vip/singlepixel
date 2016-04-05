@@ -13,6 +13,20 @@ function [walkData] = concatAllTakes(data, personIndex)
     end
 end
 
+% concatenates the takes in the list and puts the rest in another
+function [group, rest] = concatSplitTakes(data, personIndex, takeIndexes)
+    group = [];
+    rest = [];
+    personData = data.(num2str(personIndex));
+    for i = 1:personData.takeCount
+        if any(i == takeIndexes)
+            group = [group; personData.(num2str(i))];
+        else
+            rest = [rest; personData.(num2str(i))];
+        end
+    end
+end
+
 % splits the data set into labels and features - also makes features sparse
 function [labelsX, labelsY, labelsC, features] = splitData(data)
     labelsX = data(:, [1]);
@@ -45,11 +59,12 @@ end
 %   Directory "person 2"
 %     person2Take1
 %     ...
-dataDirectory = '/home/doug/Desktop/track5-synced/'
+dataDirectory = 'data/track5/'
 
 % Get files in directory
 filelist = readdir (dataDirectory);
 personCount = 0;
+minTakes = 999999999;
 for ii = 1:numel(filelist)
   % skip special files . and ..
   if (regexp (filelist{ii}, "^\\.\\.?$"))
@@ -76,6 +91,10 @@ for ii = 1:numel(filelist)
      personData.(num2str(takeCount)) = take(2:rows(take), :);
   end
 
+  % keep track of the min number of takes across all people
+  if (takeCount < minTakes)
+      minTakes = takeCount;
+  end
   % set number of takes this person has
   personData.takeCount = takeCount;
   % save person data
@@ -122,8 +141,8 @@ for person = 1:personCount
     end
 end
 % calculate the global min and range
-globalMin = min(minimums, [], 1);
-globalRange = max(maxs, [], 1) - globalMin;
+globalMin = min(minimums, [], 1)
+globalRange = max(maxs, [], 1) - globalMin
 
 % scale the takes between [-1, 1] for SVM purposes
 for person = 1:personCount
@@ -151,4 +170,17 @@ for i = 1:personCount
         end
     end
     writeData(strcat('output/oneVRest', num2str(i)), trainSet, testSet);
+end
+
+% generate the data split with walks per person split in half
+combinations = combnk(1:minTakes, floor(minTakes / 2));
+for i = 1:rows(combinations)
+    trainSet = [];
+    testSet = [];
+    for person = 1:personCount
+        [pTrain, pTest] = concatSplitTakes(data, person, combinations(i, :));
+        trainSet = [trainSet; pTrain];
+        testSet = [testSet; pTest];
+    end
+    writeData(strcat('output/halfHalf', num2str(i)), trainSet, testSet);
 end
