@@ -134,7 +134,7 @@ void runJob(SVMArgs aArgs, char * aQueue)
   //make the output dir
   std::stringstream mkdirCommand;
   mkdirCommand << "mkdir -p " << outDir;
-  std::cout << "Running: " << mkdirCommand.str() << std::endl;
+  //std::cout << "Running: " << mkdirCommand.str() << std::endl;
   //system is bad
   system(mkdirCommand.str().c_str());
 
@@ -157,7 +157,7 @@ void runJob(SVMArgs aArgs, char * aQueue)
   ss << " -out " << outDir << "out-" << id << ".txt -png " << outDir << "out-" << id << ".png ";
   ss << aArgs.args << "\"";
   std::string jobCommand = ss.str();
-  std::cout << "Running: " << jobCommand << std::endl;
+  //std::cout << "Running: " << jobCommand << std::endl;
   //system is bad
   system(jobCommand.c_str());
 }
