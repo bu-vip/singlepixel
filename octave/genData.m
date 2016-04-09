@@ -1,6 +1,23 @@
 clear
 graphics_toolkit('fltk');
 more off;
+pkg load statistics;
+
+% Assumes that data is structured in the following format:
+% dataDirectory
+%   Directory "person 1"
+%     person1Take1
+%     person1Take2
+%     ...
+%   Directory "person 2"
+%     person2Take1
+%     ...
+dataDirectory = 'data/track5/'
+
+% select which sensors to use
+useSensors = [1, 2, 3, 4, 5, 6];
+
+prefix = 'fourCorners';
 
 % helper functions
 
@@ -28,10 +45,11 @@ function [group, rest] = concatSplitTakes(data, personIndex, takeIndexes)
 end
 
 % splits the data set into labels and features - also makes features sparse
-function [labelsX, labelsY, labelsC, features] = splitData(data)
+function [labelsX, labelsY, labelsC, features] = splitData(data, sensorsToUse)
     labelsX = data(:, [1]);
     labelsY = data(:, [2]);
-    features = sparse(data(:, 3:columns(data)));
+    ftCut = data(:, 3:columns(data));
+    features = sparse(ftCut(:, sensorsToUse));
     grid = 3;
     quantX = floor((labelsX .+ 1) .* grid ./ 2.01);
     quantY = floor((labelsY .+ 1) .* grid ./ 2.01) .* grid;
@@ -39,9 +57,9 @@ function [labelsX, labelsY, labelsC, features] = splitData(data)
 end
 
 % writes the training and test sets to files for SVC & SVR
-function writeData(name, trainSet, testSet)
-    [trainX, trainY, trainC, trainFeatures] = splitData(trainSet);
-    [testX, testY, testC, testFeatures] = splitData(testSet);
+function writeData(name, trainSet, testSet, sensorsToUse)
+    [trainX, trainY, trainC, trainFeatures] = splitData(trainSet, sensorsToUse);
+    [testX, testY, testC, testFeatures] = splitData(testSet, sensorsToUse);
     libsvmwrite(strcat(name, '-trainX.scaled'), trainX, trainFeatures);
     libsvmwrite(strcat(name, '-trainY.scaled'), trainY, trainFeatures);
     libsvmwrite(strcat(name, '-trainC.scaled'), trainC, trainFeatures);
@@ -49,17 +67,6 @@ function writeData(name, trainSet, testSet)
     libsvmwrite(strcat(name, '-testY.scaled'), testY, testFeatures);
     libsvmwrite(strcat(name, '-testC.scaled'), testC, testFeatures);
 end
-
-% Assumes that data is structured in the following format:
-% dataDirectory
-%   Directory "person 1"
-%     person1Take1
-%     person1Take2
-%     ...
-%   Directory "person 2"
-%     person2Take1
-%     ...
-dataDirectory = 'data/track5/'
 
 % Get files in directory
 filelist = readdir (dataDirectory);
@@ -157,6 +164,9 @@ for person = 1:personCount
     data.(num2str(person)) = personData;
 end
 
+% save range to file
+save(strcat('output/', prefix, 'ranges.mat'), 'globalMin', 'globalRange');
+
 % generate data splits for 1vRest person wise
 oddManOut = randperm(personCount);
 for i = 1:personCount
@@ -169,11 +179,24 @@ for i = 1:personCount
             trainSet = [trainSet; concatAllTakes(data, person)];
         end
     end
-    writeData(strcat('output/oneVRest', num2str(i)), trainSet, testSet);
+    writeData(strcat('output/', prefix, 'public', num2str(i)), trainSet, testSet, useSensors);
 end
 
 % generate the data split with walks per person split in half
-combinations = combnk(1:minTakes, floor(minTakes / 2));
+%combinations = combnk(1:minTakes, floor(minTakes / 2));
+%for i = 1:rows(combinations)
+%    trainSet = [];
+%    testSet = [];
+%    for person = 1:personCount
+%        [pTrain, pTest] = concatSplitTakes(data, person, combinations(i, :));
+%        trainSet = [trainSet; pTrain];
+%        testSet = [testSet; pTest];
+%    end
+%    writeData(strcat('output/', prefix, 'halfHalf', num2str(i)), trainSet, testSet, useSensors);
+%end
+
+% generate the data split with 3 walks for training and 1 for testing
+combinations = combnk(1:minTakes, 3);
 for i = 1:rows(combinations)
     trainSet = [];
     testSet = [];
@@ -182,5 +205,5 @@ for i = 1:rows(combinations)
         trainSet = [trainSet; pTrain];
         testSet = [testSet; pTest];
     end
-    writeData(strcat('output/halfHalf', num2str(i)), trainSet, testSet);
+    writeData(strcat('output/', prefix, 'private', num2str(i)), trainSet, testSet, useSensors);
 end
