@@ -15,7 +15,14 @@ pkg load statistics;
 dataDirectory = 'data/track5/'
 
 % select which sensors to use
-useSensors = [1, 2, 3, 4, 5, 6];
+% Sensor locations:
+%   1 - Corner nearest door
+%   2 - Middle door side
+%   3 - Corner door side
+%   4 - Middle back side
+%   5 - Corner back side near windows
+%   6 - Corner back side away from windows
+useSensors = [1, 3, 5, 6];
 
 prefix = 'fourCorners';
 

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # make and clear tmp dir
-rm -r "tmp"
 mkdir "tmp"
 
 #make the results dir
@@ -9,7 +8,6 @@ mkdir "results"
 
 PARAM_FILE="results/parameters.txt";
 
-echo "Concatenating job results..."
 # go through all different job results and concat into a single file per data split
 for f in out/*.scaled;
 do
@@ -50,8 +48,9 @@ do
 	G=`perl -e 'print 2 ** ($ARGV[0])' -- $LOG2_G`;
 
 	# train model
-	libsvm/svm-train $SVM_ARGS dataSets/ results/$SPLIT_NAME.model;
+	libsvm/svm-train $SVM_ARGS "dataSets/$SPLIT_NAME.scaled" "results/$SPLIT_NAME.model";
 	TEST_FILE="${SPLIT_NAME/train/test}";
+
 	# test model
 	OUT=`libsvm/svm-predict "dataSets/$TEST_FILE.scaled" "results/$SPLIT_NAME.model" "results/$TEST_FILE.predicted"`;
 
