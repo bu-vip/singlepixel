@@ -2,13 +2,13 @@ clear
 graphics_toolkit('fltk');
 more off;
 
-groupPrefix = '/home/doug/Desktop/UROP/track5/results/dataSets/halfHalf';
+groupPrefix = '/home/doug/Desktop/UROP/track5/results/results/oneVRestWalks';
 i = 1;
 
 xActual = csvread(strcat(groupPrefix, num2str(i), '-testX.actual'));
 yActual = csvread(strcat(groupPrefix, num2str(i), '-testY.actual'));
-xPredicted = csvread(strcat(groupPrefix, num2str(i), '-testX.out'));
-yPredicted = csvread(strcat(groupPrefix, num2str(i), '-testY.out'));
+xPredicted = csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'));
+yPredicted = csvread(strcat(groupPrefix, num2str(i), '-testY.predicted'));
 
 % convert to movie using 'ffmpeg -i "%5d.png" -y output.mpeg'
 mkdir('/tmp/UROP/');

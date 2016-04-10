@@ -1,4 +1,4 @@
-dataDirectory = '/home/doug/Desktop/UROP/track5/results/dataSets/'
+dataDirectory = '/home/doug/Desktop/UROP/track5/results/results/'
 
 halfHalfCount = 6;
 oneVRestCount = 4;
@@ -18,16 +18,17 @@ function [meanAbsError, meanSqError] = calcSVRMetrics(actual, predicted)
     meanSqError = sum(squares) / rows(squares);
 end
 
-function [meanDistance, stdDev] = calcDistance(actualX, actualY, predX, predY)
+function [meanDistance, stdDev, confidence] = calcDistance(actualX, actualY, predX, predY)
   xDistance = predX .- actualX;
   yDistance = predY .- actualY;
   distance = sqrt((xDistance .* xDistance) + (yDistance .* yDistance));
   meanDistance = mean(distance);
   stdDev = std(distance);
+  confidence = stdDev / sqrt(rows(actualX));
  end
   
 
-function [maeX, mseX, maeY, mseY, meanDistance, stdDistance] = calcSVRMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange)
+function [maeX, mseX, maeY, mseY, meanDistance, stdDistance, confidence] = calcSVRMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange)
     xActual = [];
     yActual = [];
     xPredicted = [];
@@ -35,13 +36,13 @@ function [maeX, mseX, maeY, mseY, meanDistance, stdDistance] = calcSVRMetricsFor
     for i = 1:groupCount
         xActual = [xActual; csvread(strcat(groupPrefix, num2str(i), '-testX.actual'))];
         yActual = [yActual; csvread(strcat(groupPrefix, num2str(i), '-testY.actual'))];
-        xPredicted = [xPredicted; csvread(strcat(groupPrefix, num2str(i), '-testX.out'))];
-        yPredicted = [yPredicted; csvread(strcat(groupPrefix, num2str(i), '-testY.out'))];
+        xPredicted = [xPredicted; csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'))];
+        yPredicted = [yPredicted; csvread(strcat(groupPrefix, num2str(i), '-testY.predicted'))];
     end
 
     [maeX, mseX] = calcSVRMetrics(scale(xActual, xMin, xRange), scale(xPredicted, xMin, xRange));
     [maeY, mseY] = calcSVRMetrics(scale(yActual, yMin, yRange), scale(yPredicted, yMin, yRange));
-    [meanDistance, stdDistance] = calcDistance(scale(xActual, xMin, xRange), scale(yActual, yMin, yRange), scale(xPredicted, xMin, xRange), scale(yPredicted, yMin, yRange));
+    [meanDistance, stdDistance, confidence] = calcDistance(scale(xActual, xMin, xRange), scale(yActual, yMin, yRange), scale(xPredicted, xMin, xRange), scale(yPredicted, yMin, yRange));
 end
 
 function [ccr] = calcSVCMetricsForGroup(groupPrefix, groupCount)
@@ -49,25 +50,27 @@ function [ccr] = calcSVCMetricsForGroup(groupPrefix, groupCount)
     predicted = [];
     for i = 1:groupCount
         actual = [actual; csvread(strcat(groupPrefix, num2str(i), '-testC.actual'))];
-        predicted = [predicted; csvread(strcat(groupPrefix, num2str(i), '-testC.out'))];
+        predicted = [predicted; csvread(strcat(groupPrefix, num2str(i), '-testC.predicted'))];
     end
 
     diff = actual .- predicted;
     ccr = (rows(diff) - nnz(diff)) / rows(diff);
 end
 
-[hMAEX, hMSEX, hMAEY, hMSEY, hMD, hSTD] = calcSVRMetricsForGroup(strcat(dataDirectory, "halfHalf"), halfHalfCount, xMin, xRange, yMin, yRange);
-[oMAEX, oMSEX, oMAEY, oMSEY, oMD, oSTD]= calcSVRMetricsForGroup(strcat(dataDirectory, "oneVRest"), oneVRestCount, xMin, xRange, yMin, yRange);
+function calcMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange)
+  [maeX, mseX, maeY, mseY, meanDistance, meanStd, confidence] = calcSVRMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange);
+  [ccr] = calcSVCMetricsForGroup(groupPrefix, groupCount);
+  
+  printf(groupPrefix);
+  printf("\nMean Absolute Error X: %f", maeX);
+  printf("\nMean Square Error X: %f", mseX);
+  printf("\nMean Absolute Error Y: %f", maeY);
+  printf("\nMean Square Error Y: %f", mseY);
+  printf("\nMean Distance: %f", meanDistance);
+  printf("\nStd Dev Distance: %f +- %f", meanStd, confidence);
+  printf("\nCCR: %f\n", ccr);
+end
 
-printf("2v2 MeanAbsoluteErrorX: %f MeanSquareErrorX: %f MeanAbsoluteErrorY: %f MeanSquareErrorY: %f MeanDistance: %f StdDevDistance: %f\n", hMAEX, hMSEX, hMAEY, hMSEY, hMD, hSTD);
-printf("3v1 MeanAbsoluteErrorX: %f MeanSquareErrorX: %f MeanAbsoluteErrorY: %f MeanSquareErrorY: %f MeanDistance: %f StdDevDistance: %f\n", oMAEX, oMSEX, oMAEY, oMSEY, oMD, oSTD);
 
-
-[hCCR] = calcSVCMetricsForGroup(strcat(dataDirectory, "halfHalf"), halfHalfCount);
-[oCCR] = calcSVCMetricsForGroup(strcat(dataDirectory, "oneVRest"), oneVRestCount);
-
-printf("2v2 CCR: %f\n", hCCR);
-printf("3v1 CCR: %f\n", oCCR);
-
-
-
+calcMetricsForGroup(strcat(dataDirectory, "oneVRest"), oneVRestCount, xMin, xRange, yMin, yRange);
+calcMetricsForGroup(strcat(dataDirectory, "oneVRestWalks"), oneVRestCount, xMin, xRange, yMin, yRange);
