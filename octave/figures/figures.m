@@ -55,29 +55,29 @@ tEnd   = 500;
 
 % Error Distance over time Figure
 
-xDistance = xPredicted .- xActual;
-yDistance = yPredicted .- yActual;
-distance = sqrt((xDistance .* xDistance) + (yDistance .* yDistance));
-
-figure
-hold on;
-axis([0 (tEnd - tStart) 0 1.1]);
-plot(distance(tStart:tEnd), 'Color', 'r','LineWidth',2);
-xlabel('Frame','FontSize',15,'FontWeight','bold');
-ylabel('Distance','FontSize',15,'FontWeight','bold')
-hold off;
+% xDistance = xPredicted - xActual;
+% yDistance = yPredicted - yActual;
+% distance = sqrt((xDistance .* xDistance) + (yDistance .* yDistance));
+% 
+% figure
+% hold on;
+% axis([0 (tEnd - tStart) 0 1.1]);
+% plot(distance(tStart:tEnd), 'Color', 'r','LineWidth',2);
+% xlabel('Frame','FontSize',15,'FontWeight','bold');
+% ylabel('Distance','FontSize',15,'FontWeight','bold')
+% hold off;
 
 
 % Raw sensor values over time figure
-%colors = {[1.0 0 0] [0 1.0 0] [0 0 1.0] [1.0 0.5 0] [0.5 0 1.0] [0.0 0.5 0.5]};
-%for i = 1:6
-%  figure
-%  hold on;
-%  plot(sensors(tStart:tEnd, i), 'Color', colors{i}, 'LineWidth',1);
-%  axis([0 (tEnd - tStart) -1 1]);
-%  xlabel('Frame','FontSize',15,'FontWeight','bold');
-%  ylabel('Luminance','FontSize',15,'FontWeight','bold');
-%  title(cstrcat('Sensor ', num2str(i-1)));  
-%  hold off;
-%end
+colors = {[1.0 0 0] [0 1.0 0] [0 0 1.0] [1.0 0.5 0] [0.5 0 1.0] [0.0 0.5 0.5]};
+for i = 1:6
+ figure
+ hold on;
+ plot(sensors(tStart:tEnd, i), 'Color', colors{i}, 'LineWidth',1);
+ axis([0 (tEnd - tStart) -1 1]);
+ xlabel('Frame','FontSize',15,'FontWeight','bold');
+ ylabel('Luminance','FontSize',15,'FontWeight','bold');
+ title(strcat('Sensor ', num2str(i-1)));  
+ hold off;
+end
 
