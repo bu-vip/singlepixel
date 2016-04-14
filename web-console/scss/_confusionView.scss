@@ -1,10 +1,13 @@
-.confusionTable {
-
-
-  td {
-    width: 50px;
-    height: 50px;
-    text-align: center;
-    vertical-align: middle;
-  }
+.confusionView {
+    margin: 10px;
+    .confusionGrid {
+        border-style: solid;
+        border-color: rgb(100, 100, 100);
+        td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            vertical-align: middle;
+        }
+    }
 }
