@@ -22,9 +22,12 @@ dataDirectory = 'data/track5/'
 %   4 - Middle back side
 %   5 - Corner back side near windows
 %   6 - Corner back side away from windows
+%useSensors = [1, 2, 3, 4, 5, 6];
 useSensors = [1, 3, 5, 6];
 
-prefix = 'fourCorners';
+% Prefix for file names
+%prefix = 'six';
+prefix = 'four';
 
 % helper functions
 
@@ -141,39 +144,6 @@ for person = 1:personCount
     data.(num2str(person)) = personData;
 end
 
-% calculate the min and range of the each take
-minimums = [];
-maxs = [];
-for person = 1:personCount
-    personData = data.(num2str(person));
-    for take = 1:personData.takeCount
-        takeData = personData.(num2str(take));
-        takeMins = min(takeData, [], 1);
-        takeMaxs = max(takeData, [], 1);
-        minimums = [minimums; takeMins];
-        maxs = [maxs; takeMaxs];
-    end
-end
-% calculate the global min and range
-globalMin = min(minimums, [], 1)
-globalRange = max(maxs, [], 1) - globalMin
-
-% scale the takes between [-1, 1] for SVM purposes
-for person = 1:personCount
-    personData = data.(num2str(person));
-    for take = 1:personData.takeCount
-        takeData = personData.(num2str(take));
-        takeData = (takeData - repmat(globalMin, size(takeData, 1), 1)) ./ repmat(globalRange, size(takeData, 1), 1);
-        takeData = (takeData .* 2) .- 1;
-        personData.(num2str(take)) = takeData;
-    end
-    % copy modified person data back into data
-    data.(num2str(person)) = personData;
-end
-
-% save range to file
-save(strcat('output/', prefix, 'ranges.mat'), 'globalMin', 'globalRange');
-
 % generate data splits for 1vRest person wise
 oddManOut = randperm(personCount);
 for i = 1:personCount
@@ -186,21 +156,19 @@ for i = 1:personCount
             trainSet = [trainSet; concatAllTakes(data, person)];
         end
     end
-    writeData(strcat('output/', prefix, 'public', num2str(i)), trainSet, testSet, useSensors);
+    % Rescale data
+    trainMins = min(trainSet, [], 1);
+    trainRange = max(trainSet, [], 1) - trainMins;
+    trainSet = (trainSet - repmat(trainMins, size(trainMins, 1), 1)) ./ repmat(trainRange, size(trainMins, 1), 1);
+    testSet = (testSet - repmat(trainMins, size(testSet, 1), 1)) ./ repmat(trainRange, size(testSet, 1), 1);
+    % Bound incase test set has larger/smaller values
+    testSet(testSet < 0) = 0;
+    testSet(testSet > 1) = 1;
+    % Write data
+    writeData(strcat('output/', prefix, 'Public', num2str(i)), trainSet, testSet, useSensors);
+    % Save ranges
+    save(strcat('output/', prefix, 'Public', num2str(i), '-ranges.mat'), 'trainMins', 'trainRange');
 end
-
-% generate the data split with walks per person split in half
-%combinations = combnk(1:minTakes, floor(minTakes / 2));
-%for i = 1:rows(combinations)
-%    trainSet = [];
-%    testSet = [];
-%    for person = 1:personCount
-%        [pTrain, pTest] = concatSplitTakes(data, person, combinations(i, :));
-%        trainSet = [trainSet; pTrain];
-%        testSet = [testSet; pTest];
-%    end
-%    writeData(strcat('output/', prefix, 'halfHalf', num2str(i)), trainSet, testSet, useSensors);
-%end
 
 % generate the data split with 3 walks for training and 1 for testing
 combinations = combnk(1:minTakes, 3);
@@ -212,5 +180,16 @@ for i = 1:rows(combinations)
         trainSet = [trainSet; pTrain];
         testSet = [testSet; pTest];
     end
-    writeData(strcat('output/', prefix, 'private', num2str(i)), trainSet, testSet, useSensors);
+    % Rescale data
+    trainMins = min(trainSet, [], 1);
+    trainRange = max(trainSet, [], 1) - trainMins;
+    trainSet = (trainSet - repmat(trainMins, size(trainMins, 1), 1)) ./ repmat(trainRange, size(trainMins, 1), 1);
+    testSet = (testSet - repmat(trainMins, size(testSet, 1), 1)) ./ repmat(trainRange, size(testSet, 1), 1);
+    % Bound incase test set has larger/smaller values
+    testSet(testSet < 0) = 0;
+    testSet(testSet > 1) = 1;
+    % Write data
+    writeData(strcat('output/', prefix, 'Private', num2str(i)), trainSet, testSet, useSensors);
+    % Save ranges
+    save(strcat('output/', prefix, 'Private', num2str(i), '-ranges.mat'), 'trainMins', 'trainRange');
 end

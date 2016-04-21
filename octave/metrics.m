@@ -78,12 +78,12 @@ function calcMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange
   [ccr, conf] = calcSVCMetricsForGroup(groupPrefix, groupCount);
   
   printf(groupPrefix);
-  printf("\nMean Absolute Error X: %f", maeX);
-  printf("\nMean Square Error X: %f", mseX);
-  printf("\nMean Absolute Error Y: %f", maeY);
-  printf("\nMean Square Error Y: %f", mseY);
-  printf("\nMean Distance: %f", meanDistance);
-  printf("\nStd Dev Distance: %f +- %f", meanStd, confidence);
+  printf("\nMean Absolute Error X: %.4f", maeX);
+  printf("\nMean Square Error X: %.4f", mseX);
+  printf("\nMean Absolute Error Y: %.4f", maeY);
+  printf("\nMean Square Error Y: %.4f", mseY);
+  printf("\nMean Distance: %.4f", meanDistance);
+  printf("\nStd Dev Distance: %.4f +- %.4f", meanStd, confidence);
   printf("\nQuantized SVR CCR: %.4f\n", qCCR);
   qConf
   printf("\nCCR: %.4f\n", ccr);

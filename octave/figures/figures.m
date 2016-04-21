@@ -5,8 +5,11 @@ i = 1;
 
 xPredicted = csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'));
 yPredicted = csvread(strcat(groupPrefix, num2str(i), '-testY.predicted'));
+cPredicted = csvread(strcat(groupPrefix, num2str(i), '-testC.predicted'));
 xActual = csvread(strcat(groupPrefix, num2str(i), '-testX.actual'));
 yActual = csvread(strcat(groupPrefix, num2str(i), '-testY.actual'));
+cActual = csvread(strcat(groupPrefix, num2str(i), '-testC.actual'));
+trainCActual = csvread(strcat(groupPrefix, num2str(i), '-trainC.actual'));
 sensors = csvread(strcat(groupPrefix, num2str(i), '-testX.sensors'));
 
 
@@ -54,20 +57,20 @@ tEnd   = 500;
 
 
 % Error Distance over time Figure
-xDistance = xPredicted - xActual;
-yDistance = yPredicted - yActual;
-distance = sqrt((xDistance .* xDistance) + (yDistance .* yDistance));
-
-figure
-hold on;
-axis([0 (tEnd - tStart) 0 1.1]);
-plot(distance(tStart:tEnd), 'Color', 'r','LineWidth',2);
-xlabel('Frame','FontSize',15,'FontWeight','bold');
-ylabel('Normalized Distance','FontSize',15,'FontWeight','bold');
-AX = legend('Distance', 'FontSize',20,'FontWeight','bold')
-LEG = findobj(AX,'type','text');
-set(LEG,'FontSize',15,'FontWeight','bold');
-hold off;
+%xDistance = xPredicted - xActual;
+%yDistance = yPredicted - yActual;
+%distance = sqrt((xDistance .* xDistance) + (yDistance .* yDistance));
+%
+%figure
+%hold on;
+%axis([0 (tEnd - tStart) 0 1.1]);
+%plot(distance(tStart:tEnd), 'Color', 'r','LineWidth',2);
+%xlabel('Frame','FontSize',15,'FontWeight','bold');
+%ylabel('Normalized Distance','FontSize',15,'FontWeight','bold');
+%AX = legend('Distance', 'FontSize',20,'FontWeight','bold')
+%LEG = findobj(AX,'type','text');
+%set(LEG,'FontSize',15,'FontWeight','bold');
+%hold off;
 
 % Raw sensor values over time figure
 % colors = {[1.0 0 0] [0 1.0 0] [0 0 1.0] [1.0 0.5 0] [0.5 0 1.0] [0.0 0.5 0.5]};
@@ -83,3 +86,23 @@ hold off;
 %  set(LEG,'FontSize',15,'FontWeight','bold');
 %  hold off;
 % end
+
+allC = [trainCActual; cActual];
+
+counts = zeros(9, 1);
+for i = 1:rows(allC)
+  counts(allC(i) + 1) = counts(allC(i) + 1)  + 1;
+end
+counts
+counts ./ rows(allC)
+
+
+figure
+hold on;
+hist(cActual, 9);
+xlabel('Class','FontSize',15,'FontWeight','bold');
+ylabel('Number of Samples','FontSize',15,'FontWeight','bold');
+%AX = legend('Distance', 'FontSize',20,'FontWeight','bold')
+%LEG = findobj(AX,'type','text');
+%set(LEG,'FontSize',15,'FontWeight','bold');
+hold off;
