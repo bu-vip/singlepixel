@@ -1,6 +1,6 @@
 clear all
 close all
-groupPrefix = 'oneVRest';
+groupPrefix = 'sixPrivate';
 i = 1;
 
 xPredicted = csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'));
@@ -9,17 +9,17 @@ cPredicted = csvread(strcat(groupPrefix, num2str(i), '-testC.predicted'));
 xActual = csvread(strcat(groupPrefix, num2str(i), '-testX.actual'));
 yActual = csvread(strcat(groupPrefix, num2str(i), '-testY.actual'));
 cActual = csvread(strcat(groupPrefix, num2str(i), '-testC.actual'));
-trainCActual = csvread(strcat(groupPrefix, num2str(i), '-trainC.actual'));
-sensors = csvread(strcat(groupPrefix, num2str(i), '-testX.sensors'));
+%trainCActual = csvread(strcat(groupPrefix, num2str(i), '-trainC.actual'));
+sensors = csvread(strcat(groupPrefix, num2str(i), '-testC.sensors'));
 
 
 % Walk distribution figure
-%figure
-%axis([-1, 1 -1 1]);
-%h = scatter(xActual(1:971), yActual(1:971),'r');
-%grid on
-%box on
-%xlabel('X','FontSize',15,'FontWeight','bold'),ylabel('Y','FontSize',15,'FontWeight','bold')
+figure
+axis([-1, 1 -1 1]);
+h = scatter(xActual(1:971), yActual(1:971),'r');
+grid on
+box on
+xlabel('X','FontSize',15,'FontWeight','bold'),ylabel('Y','FontSize',15,'FontWeight','bold')
 
 %figure
 %axis([-1, 1 -1 1]);
@@ -31,29 +31,29 @@ tStart = 200;
 tEnd   = 500;
 
 % X Actual & Predicted over time figure
-%figure
-%hold on;
-%axis([0 (tEnd - tStart) -1 1]);
-%plot(xPredicted(tStart:tEnd), 'Color', 'r','LineWidth',2);
-%plot(xActual(tStart:tEnd), 'Color', 'b','LineWidth',2);
-%xlabel('Frame','FontSize',15,'FontWeight','bold'),ylabel('X','FontSize',15,'FontWeight','bold')
-%AX = legend('Estimates','Ground Truth','FontSize',20,'FontWeight','bold')
-%LEG = findobj(AX,'type','text');
-%set(LEG,'FontSize',15,'FontWeight','bold')
-%hold off;
+figure
+hold on;
+axis([0 (tEnd - tStart) -1 1]);
+plot(xPredicted(tStart:tEnd), 'Color', 'r','LineWidth',2);
+plot(xActual(tStart:tEnd), 'Color', 'b','LineWidth',2);
+xlabel('Frame','FontSize',15,'FontWeight','bold'),ylabel('X','FontSize',15,'FontWeight','bold')
+AX = legend('Estimates','Ground Truth','FontSize',20,'FontWeight','bold')
+LEG = findobj(AX,'type','text');
+set(LEG,'FontSize',15,'FontWeight','bold')
+hold off;
 
 
 % Y Actual & Predicted over time figure
-%figure
-%hold on;
-%axis([0 (tEnd - tStart) -1 1]);
-%plot(yPredicted(tStart:tEnd), 'Color', 'r','LineWidth',2);
-%plot(yActual(tStart:tEnd), 'Color', 'b','LineWidth',2);
-%xlabel('Frame','FontSize',15,'FontWeight','bold'),ylabel('Y','FontSize',15,'FontWeight','bold')
-%AX = legend('Estimates','Ground Truth','FontSize',20,'FontWeight','bold')
-%LEG = findobj(AX,'type','text');
-%set(LEG,'FontSize',15,'FontWeight','bold');
-%hold off;
+figure
+hold on;
+axis([0 (tEnd - tStart) -1 1]);
+plot(yPredicted(tStart:tEnd), 'Color', 'r','LineWidth',2);
+plot(yActual(tStart:tEnd), 'Color', 'b','LineWidth',2);
+xlabel('Frame','FontSize',15,'FontWeight','bold'),ylabel('Y','FontSize',15,'FontWeight','bold')
+AX = legend('Estimates','Ground Truth','FontSize',20,'FontWeight','bold')
+LEG = findobj(AX,'type','text');
+set(LEG,'FontSize',15,'FontWeight','bold');
+hold off;
 
 
 % Error Distance over time Figure
@@ -73,36 +73,36 @@ tEnd   = 500;
 %hold off;
 
 % Raw sensor values over time figure
-% colors = {[1.0 0 0] [0 1.0 0] [0 0 1.0] [1.0 0.5 0] [0.5 0 1.0] [0.0 0.5 0.5]};
-% for i = 1:6
-%  figure
-%  hold on;
-%  plot(sensors(tStart:tEnd, i), 'Color', colors{i}, 'LineWidth',1);
-%  axis([0 (tEnd - tStart) -1 1]);
-%  xlabel('Frame','FontSize',15,'FontWeight','bold');
-%  ylabel('Luminance','FontSize',15,'FontWeight','bold');
-%  AX = legend(strcat('Sensor-', num2str(i-1)),'FontSize',20,'FontWeight','bold')
-%  LEG = findobj(AX,'type','text');
-%  set(LEG,'FontSize',15,'FontWeight','bold');
-%  hold off;
-% end
+ colors = {[1.0 0 0] [0 1.0 0] [0 0 1.0] [1.0 0.5 0] [0.5 0 1.0] [0.0 0.5 0.5]};
+ for i = 1:6
+  figure
+  hold on;
+  plot(sensors(tStart:tEnd, i), 'Color', colors{i}, 'LineWidth',1);
+  axis([0 (tEnd - tStart) -1 1]);
+  xlabel('Frame','FontSize',15,'FontWeight','bold');
+  ylabel('Luminance','FontSize',15,'FontWeight','bold');
+  AX = legend(strcat('Sensor-', num2str(i-1)),'FontSize',20,'FontWeight','bold')
+  LEG = findobj(AX,'type','text');
+  set(LEG,'FontSize',15,'FontWeight','bold');
+  hold off;
+ end
 
-allC = [trainCActual; cActual];
-
-counts = zeros(9, 1);
-for i = 1:rows(allC)
-  counts(allC(i) + 1) = counts(allC(i) + 1)  + 1;
-end
-counts
-counts ./ rows(allC)
-
-
-figure
-hold on;
-hist(cActual, 9);
-xlabel('Class','FontSize',15,'FontWeight','bold');
-ylabel('Number of Samples','FontSize',15,'FontWeight','bold');
-%AX = legend('Distance', 'FontSize',20,'FontWeight','bold')
-%LEG = findobj(AX,'type','text');
-%set(LEG,'FontSize',15,'FontWeight','bold');
-hold off;
+%allC = [trainCActual; cActual];
+%
+%counts = zeros(9, 1);
+%for i = 1:rows(allC)
+%  counts(allC(i) + 1) = counts(allC(i) + 1)  + 1;
+%end
+%counts
+%counts ./ rows(allC)
+%
+%
+%figure
+%hold on;
+%hist(cActual, 9);
+%xlabel('Class','FontSize',15,'FontWeight','bold');
+%ylabel('Number of Samples','FontSize',15,'FontWeight','bold');
+%%AX = legend('Distance', 'FontSize',20,'FontWeight','bold')
+%%LEG = findobj(AX,'type','text');
+%%set(LEG,'FontSize',15,'FontWeight','bold');
+%hold off;

@@ -31,6 +31,18 @@ prefix = 'four';
 
 % helper functions
 
+% scale the data
+function [scaledTrain, scaledTest, trainMins, trainRange] = scaleData(trainSet, testSet)
+    trainMins = min(trainSet, [], 1);
+    trainRange = max(trainSet, [], 1) - trainMins;
+    trainSet = (trainSet - repmat(trainMins, size(trainSet, 1), 1)) ./ repmat(trainRange, size(trainSet, 1), 1);
+    testSet = (testSet - repmat(trainMins, size(testSet, 1), 1)) ./ repmat(trainRange, size(testSet, 1), 1);
+    scaledTrain = trainSet * 2 - 1;
+    scaledTest = testSet * 2 - 1;
+    scaledTest(scaledTest < -1) = -1;
+    scaledTest(scaledTest > 1) = 1;
+end
+
 % concatenates all takes from a single person into 1 matrix
 function [walkData] = concatAllTakes(data, personIndex)
     walkData = [];
@@ -64,6 +76,12 @@ function [labelsX, labelsY, labelsC, features] = splitData(data, sensorsToUse)
     quantX = floor((labelsX .+ 1) .* grid ./ 2.01);
     quantY = floor((labelsY .+ 1) .* grid ./ 2.01) .* grid;
     labelsC = quantX .+ quantY;
+    
+    if (max(labelsC) - min(labelsC) + 1 != grid * grid)
+      printf("Something  may be wrong, detected missing classes\n");
+      min(labelsC)
+      max(labelsC)
+    end
 end
 
 % writes the training and test sets to files for SVC & SVR
@@ -157,13 +175,7 @@ for i = 1:personCount
         end
     end
     % Rescale data
-    trainMins = min(trainSet, [], 1);
-    trainRange = max(trainSet, [], 1) - trainMins;
-    trainSet = (trainSet - repmat(trainMins, size(trainMins, 1), 1)) ./ repmat(trainRange, size(trainMins, 1), 1);
-    testSet = (testSet - repmat(trainMins, size(testSet, 1), 1)) ./ repmat(trainRange, size(testSet, 1), 1);
-    % Bound incase test set has larger/smaller values
-    testSet(testSet < 0) = 0;
-    testSet(testSet > 1) = 1;
+    [trainSet, testSet, trainMins, trainRange] = scaleData(trainSet, testSet);
     % Write data
     writeData(strcat('output/', prefix, 'Public', num2str(i)), trainSet, testSet, useSensors);
     % Save ranges
@@ -181,13 +193,7 @@ for i = 1:rows(combinations)
         testSet = [testSet; pTest];
     end
     % Rescale data
-    trainMins = min(trainSet, [], 1);
-    trainRange = max(trainSet, [], 1) - trainMins;
-    trainSet = (trainSet - repmat(trainMins, size(trainMins, 1), 1)) ./ repmat(trainRange, size(trainMins, 1), 1);
-    testSet = (testSet - repmat(trainMins, size(testSet, 1), 1)) ./ repmat(trainRange, size(testSet, 1), 1);
-    % Bound incase test set has larger/smaller values
-    testSet(testSet < 0) = 0;
-    testSet(testSet > 1) = 1;
+    [trainSet, testSet, trainMins, trainRange] = scaleData(trainSet, testSet);
     % Write data
     writeData(strcat('output/', prefix, 'Private', num2str(i)), trainSet, testSet, useSensors);
     % Save ranges
