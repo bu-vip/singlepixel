@@ -37,28 +37,43 @@ function [ccr, confusion] = calcCCR(actualC, predictedC)
 end
   
 
-function [maeX, mseX, maeY, mseY, meanDistance, stdDistance, confidence, qCCR, qConf] = calcSVRMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange)
+function [maeX, mseX, maeY, mseY, meanDistance, stdDistance, confidence, qCCR, qConf] = calcSVRMetricsForGroup(groupPrefix, groupCount, scalePrefix)
     xActual = [];
     yActual = [];
     cActual = [];
     xPredicted = [];
     yPredicted = [];
+    cPredicted = [];
     for i = 1:groupCount
-        xActual = [xActual; csvread(strcat(groupPrefix, num2str(i), '-testX.actual'))];
-        yActual = [yActual; csvread(strcat(groupPrefix, num2str(i), '-testY.actual'))];
-        cActual = [cActual; csvread(strcat(groupPrefix, num2str(i), '-testC.actual'))];
-        xPredicted = [xPredicted; csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'))];
-        yPredicted = [yPredicted; csvread(strcat(groupPrefix, num2str(i), '-testY.predicted'))];
-    end
-
-    [maeX, mseX] = calcSVRMetrics(scale(xActual, xMin, xRange), scale(xPredicted, xMin, xRange));
-    [maeY, mseY] = calcSVRMetrics(scale(yActual, yMin, yRange), scale(yPredicted, yMin, yRange));
-    [meanDistance, stdDistance, confidence] = calcDistance(scale(xActual, xMin, xRange), scale(yActual, yMin, yRange), scale(xPredicted, xMin, xRange), scale(yPredicted, yMin, yRange));
+        % get scaling params
+        load(strcat(scalePrefix, num2str(i), '-ranges.mat'), 'trainMins', 'trainRange');
+        %load data
+        testXActual = csvread(strcat(groupPrefix, num2str(i), '-testX.actual'));
+        testYActual = csvread(strcat(groupPrefix, num2str(i), '-testY.actual'));
+        testXPredicted = csvread(strcat(groupPrefix, num2str(i), '-testX.predicted'));
+        testYPredicted = csvread(strcat(groupPrefix, num2str(i), '-testY.predicted'));
         
-    grid = 3;
-    quantX = max(min(floor((xPredicted .+ 1) .* grid ./ 2.01), grid), 0);
-    quantY = max(min(floor((yPredicted .+ 1) .* grid ./ 2.01), grid), 0) .* grid;
-    cPredicted = quantX .+ quantY;
+        % scale and add to dataset
+        xActual = [xActual; scale(testXActual, trainMins(1), trainRange(1))];
+        yActual = [yActual; scale(testYActual, trainMins(2), trainRange(2))];
+        cActual = [cActual; csvread(strcat(groupPrefix, num2str(i), '-testC.actual'))];
+        xPredicted = [xPredicted; scale(testXPredicted, trainMins(1), trainRange(1))];
+        yPredicted = [yPredicted; scale(testYPredicted, trainMins(2), trainRange(2))];
+        
+        %calc the quantized svr
+        grid = 3;
+        quantX = floor((testXPredicted .+ 1) .* grid ./ 2.01);
+        quantY = floor((testYPredicted .+ 1) .* grid ./ 2.01) .* grid;
+        cPredicted = [cPredicted; (quantX .+ quantY)];
+    end
+    
+    cPredicted(cPredicted >= grid * grid) = grid * grid - 1;
+    cPredicted(cPredicted < 0) = 0;
+    
+    % calc metrics
+    [maeX, mseX] = calcSVRMetrics(xActual, xPredicted);
+    [maeY, mseY] = calcSVRMetrics(yActual, yPredicted);
+    [meanDistance, stdDistance, confidence] = calcDistance(xActual, yActual, xPredicted, yPredicted);
     [qCCR, qConf] = calcCCR(cActual, cPredicted);
 end
 
@@ -73,17 +88,17 @@ function [ccr, conf] = calcSVCMetricsForGroup(groupPrefix, groupCount)
     [ccr, conf] = calcCCR(actual, predicted);
 end
 
-function calcMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange)
-  [maeX, mseX, maeY, mseY, meanDistance, meanStd, confidence, qCCR, qConf] = calcSVRMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange);
+function calcMetricsForGroup(groupPrefix, groupCount, scalePrefix)
+  [maeX, mseX, maeY, mseY, meanDistance, meanStd, confidence, qCCR, qConf] = calcSVRMetricsForGroup(groupPrefix, groupCount, scalePrefix);
   [ccr, conf] = calcSVCMetricsForGroup(groupPrefix, groupCount);
   
   printf(groupPrefix);
-  printf("\nMean Absolute Error X: %f", maeX);
-  printf("\nMean Square Error X: %f", mseX);
-  printf("\nMean Absolute Error Y: %f", maeY);
-  printf("\nMean Square Error Y: %f", mseY);
-  printf("\nMean Distance: %f", meanDistance);
-  printf("\nStd Dev Distance: %f +- %f", meanStd, confidence);
+  printf("\nMean Absolute Error X: %.4f", maeX);
+  printf("\nMean Square Error X: %.4f", mseX);
+  printf("\nMean Absolute Error Y: %.4f", maeY);
+  printf("\nMean Square Error Y: %.4f", mseY);
+  printf("\nMean Distance: %.4f +- %.4f", meanDistance, confidence);
+  printf("\nStd Dev Distance: %.4f", meanStd);
   printf("\nQuantized SVR CCR: %.4f\n", qCCR);
   qConf
   printf("\nCCR: %.4f\n", ccr);
@@ -108,12 +123,8 @@ function calcMetricsForGroup(groupPrefix, groupCount, xMin, xRange, yMin, yRange
 %  printf("& %.4f \n", ccr);
 end
 
-dataDirectory = '/home/doug/Desktop/UROP/track5/6_results/'
-load(strcat(dataDirectory, "dataSets/",'ranges.mat'), 'globalMin', 'globalRange');
-calcMetricsForGroup(strcat(dataDirectory, "results/", "oneVRestWalks"), 4, globalMin(1), globalRange(1), globalMin(2), globalRange(2));
-calcMetricsForGroup(strcat(dataDirectory, "results/", "oneVRest"), 4, globalMin(1), globalRange(1), globalMin(2), globalRange(2));
-
-dataDirectory = '/home/doug/Desktop/UROP/track5/4_results/'
-load(strcat(dataDirectory, "dataSets/",'fourCornersranges.mat'), 'globalMin', 'globalRange');
-calcMetricsForGroup(strcat(dataDirectory, "results/", "fourCornersprivate"), 4, globalMin(1), globalRange(1), globalMin(2), globalRange(2));
-calcMetricsForGroup(strcat(dataDirectory, "results/", "fourCornerspublic"), 4, globalMin(1), globalRange(1), globalMin(2), globalRange(2));
+dataDirectory = '/home/doug/Desktop/rescaled/'
+calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPrivate"), 4, strcat(dataDirectory, "dataSets/", "sixPrivate"));
+calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPublic"), 4, strcat(dataDirectory, "dataSets/", "sixPublic"));
+calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPrivate"), 4, strcat(dataDirectory, "dataSets/", "fourPrivate"));
+calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPublic"), 4, strcat(dataDirectory, "dataSets/", "fourPublic"));
