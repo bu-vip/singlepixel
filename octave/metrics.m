@@ -88,7 +88,7 @@ function [ccr, conf] = calcSVCMetricsForGroup(groupPrefix, groupCount)
     [ccr, conf] = calcCCR(actual, predicted);
 end
 
-function calcMetricsForGroup(groupPrefix, groupCount, scalePrefix)
+function [maeX, mseX, maeY, mseY, meanDistance, meanStd, confidence, qCCR, qConf, ccr, conf] = calcMetricsForGroup(groupPrefix, groupCount, scalePrefix)
   [maeX, mseX, maeY, mseY, meanDistance, meanStd, confidence, qCCR, qConf] = calcSVRMetricsForGroup(groupPrefix, groupCount, scalePrefix);
   [ccr, conf] = calcSVCMetricsForGroup(groupPrefix, groupCount);
   
@@ -104,27 +104,35 @@ function calcMetricsForGroup(groupPrefix, groupCount, scalePrefix)
   printf("\nCCR: %.4f\n", ccr);
   conf
   printf("\n");
-% latex
-%  printf(groupPrefix);
-%  printf(" & \\multirow{2}{*}{%.4f} ", maeX);
-%  printf("& \\multirow{2}{*}{%.4f} ", mseX);
-%  printf("& \\multirow{2}{*}{%.4f} ", maeY);
-%  printf("& \\multirow{2}{*}{%.4f} ", mseY);
-%  printf("& \\multirow{2}{*}{%.4f} ", meanDistance);
-%  printf("& \\multirow{2}{*}{%.4f $\\pm$ %.4f} ", meanStd, confidence);
-%  printf("& \\multirow{2}{*}{%.4f} \n", ccr);
-%  printf(groupPrefix);
-%  printf(" & %.4f} ", maeX);
-%  printf("& %.4f} ", mseX);
-%  printf("& %.4f} ", maeY);
-%  printf("& %.4f} ", mseY);
-%  printf("& %.4f} ", meanDistance);
-%  printf("& %.4f $\\pm$ %.4f ", meanStd, confidence);
-%  printf("& %.4f \n", ccr);
 end
 
 dataDirectory = '/home/doug/Desktop/rescaled/'
-calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPrivate"), 4, strcat(dataDirectory, "dataSets/", "sixPrivate"));
-calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPublic"), 4, strcat(dataDirectory, "dataSets/", "sixPublic"));
-calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPrivate"), 4, strcat(dataDirectory, "dataSets/", "fourPrivate"));
-calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPublic"), 4, strcat(dataDirectory, "dataSets/", "fourPublic"));
+[sixPrivatemaeX, sixPrivatemseX, sixPrivatemaeY, sixPrivatemseY, sixPrivatemeanDistance, sixPrivatemeanStd, sixPrivateconfidence, sixPrivateqCCR, sixPrivateqConf, sixPrivateccr, sixPrivateconf] = calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPrivate"), 4, strcat(dataDirectory, "dataSets/", "sixPrivate"));
+[sixPublicmaeX, sixPublicmseX, sixPublicmaeY, sixPublicmseY, sixPublicmeanDistance, sixPublicmeanStd, sixPublicconfidence, sixPublicqCCR, sixPublicqConf, sixPublicccr, sixPublicconf] = calcMetricsForGroup(strcat(dataDirectory, "results/", "sixPublic"), 4, strcat(dataDirectory, "dataSets/", "sixPublic"));
+[fourPrivatemaeX, fourPrivatemseX, fourPrivatemaeY, fourPrivatemseY, fourPrivatemeanDistance, fourPrivatemeanStd, fourPrivateconfidence, fourPrivateqCCR, fourPrivateqConf, fourPrivateccr, conf] = calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPrivate"), 4, strcat(dataDirectory, "dataSets/", "fourPrivate"));
+[fourPublicmaeX, fourPublicmseX, fourPublicmaeY, fourPublicmseY, fourPublicmeanDistance, fourPublicmeanStd, fourPublicconfidence, fourPublicqCCR, fourPublicqConf, fourPublicccr, fourPublicconf] = calcMetricsForGroup(strcat(dataDirectory, "results/", "fourPublic"), 4, strcat(dataDirectory, "dataSets/", "fourPublic"));
+
+printf("Latex\n");
+printf("& \\multicolumn{2}{c|}{6 Sensors} & \\multicolumn{2}{c|}{4 Sensors} \\\\\n"); 
+printf("SVR & Private & Public & Private & Public \\\\\n");
+printf("\\hline\n");
+printf("MAE $x$ & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivatemaeX, sixPublicmaeX, fourPrivatemaeX, fourPublicmaeX);
+printf("\\hline\n");
+printf("MSE $x$ & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivatemseX, sixPublicmseX, fourPrivatemseX, fourPublicmseX);
+printf("\\hline\n");
+printf("MAE $y$ & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivatemaeY, sixPublicmaeY, fourPrivatemaeY, fourPublicmaeY);
+printf("\\hline\n");
+printf("MSE $y$ & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivatemseY, sixPublicmseY, fourPrivatemseY, fourPublicmseY);
+printf("\\hline\n");
+printf("Mean Distance & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivatemeanDistance, sixPublicmeanDistance, fourPrivatemeanDistance, fourPublicmeanDistance);
+printf("$\\pm 1 \\sigma$ & $\\pm$ & $\\pm$ &  $\\pm$ & $\\pm$ \\\\\n");
+printf("confidence & %.4f & %.4f & %.4f & %.4f\\\\\n", sixPrivateconfidence, sixPublicconfidence, fourPrivateconfidence, fourPublicconfidence);
+printf("\\hline\n");
+printf("\\multirow{3}{*}{}\n");
+printf("Std. Dev. & %.4f & %.4f & %.4f & %.4f\\\\\n\n", sixPrivatemeanStd, sixPublicmeanStd, fourPrivatemeanStd, fourPublicmeanStd);
+
+printf("& \\multicolumn{2}{c|}{6 Sensors} & \\multicolumn{2}{c|}{4 Sensors} \\\\\n");
+printf("& Private & Public & Private & Public \\\\\n");
+printf("SVM CCR & %.2f \\%% & %.2f \\%% & %.2f \\%% & %.2f \\%% \\\\\n", sixPrivateccr * 100, sixPublicccr * 100, fourPrivateccr * 100, fourPublicccr * 100);
+printf("\\hline\n");
+printf("QSVR CCR & %.2f \\%% & %.2f \\%% & %.2f \\%% & %.2f \\%% \\\\\n", sixPrivateqCCR * 100, sixPublicqCCR * 100, fourPrivateqCCR * 100, fourPublicqCCR * 100);
