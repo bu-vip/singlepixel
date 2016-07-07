@@ -165,7 +165,7 @@ class SensorReader:
                                                             rgb['g'] / float(self.max_sensor_val), \
                                                             rgb['b'] / float(self.max_sensor_val), \
                                                             rgb['c'] / float(self.max_sensor_val), \
-                                                            self.time_min(), self.time_sec()]
+                                                            self.timestamp(), self.time_sec()]
                                             x2 = x2*2
                                     else:
                                             x2 = x2*2
