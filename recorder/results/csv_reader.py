@@ -41,7 +41,7 @@ def readCSV(fileName, numOfCameras = 12):
 #if __name__ == "__main__": 
 #    main()
 
-def readCSV_white(fileName, numOfCameras = 12):
+def readCSV_white(fileName, numOfCameras = 12, method='value'):
     N = 0
     white = [[] for j in range(numOfCameras)]
     try:
@@ -49,12 +49,22 @@ def readCSV_white(fileName, numOfCameras = 12):
         with f:
             reader = csv.reader(f)
             normalized = False
+            prevValue = list()
             for row in reader:
                 if N != 0:
                     cameraId = 8*int(row[2])+int(row[5])
                     if (normalized or cameraId == 0) and cameraId < numOfCameras: # ignore results before normalization and higher camera IDs
                         normalized = True # normalize it
-                        white[cameraId].append(float(row[8])) # convert value to float
+                        if method == 'value':
+                            listContent = float(row[8])
+                        elif method == 'diff':
+                            if len(white[cameraId]) == 0:
+                                listContent = 0
+                                prevValue.append(float(row[8]))
+                            else:
+                                listContent = float(row[8])-prevValue[cameraId]
+                            prevValue[cameraId] = float(row[8]) # set previous value to current value
+                        white[cameraId].append(listContent) # convert value to float
                 N = N+1
             for i in range(len(white)):
                 if len(white[numOfCameras-1]) < len(white[i]):
@@ -103,17 +113,22 @@ def graph_plots(plots):
     plt.legend(handles=patches)
     plt.show()
 
-def collectData(mainDirectory = os.getcwd()):
+def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value'):
     allData = dict() # store everything in a dictionary
+    print("Gestures available: ")
     for subdir, dirs, files in os.walk(mainDirectory):
         gestureName = os.path.basename(subdir)
         if gestureName != "results":
-            if not gestureName.startswith("_"):
+            if not gestureName.startswith("_"): # ignore all folders starting with _
                 gestureList = list()
                 for fileName in os.listdir(gestureName):
-                    print(fileName)
-                    gestureList.append(readCSV_convert(gestureName+"/"+fileName))
-            allData[gestureName] = gestureList
+                    gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
+                allData[gestureName] = gestureList
+                print(gestureName)
     return allData
-    
 
+# Structure of data: dictionary
+# 1st dimension: name of the gesture
+# 2nd dimension: the nth result reading
+# 3rd dimension: the sensor ID
+# 4th dimension: the reading at time t
