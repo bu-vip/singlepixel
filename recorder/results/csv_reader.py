@@ -74,35 +74,6 @@ def readCSV_white(fileName, numOfCameras = 12, method='value'):
         print(e)
     return []
 
-def readCSV_convert(fileName, numOfCameras = 12):
-    N = 0
-    white = [[] for j in range(numOfCameras)]
-    try:
-        f = open(fileName, "r")
-        with f:
-            reader = csv.reader(f)
-            normalized = False
-            for row in reader:
-                if N != 0:
-                    cameraId = 8*int(row[2])+int(row[5])
-                    if (normalized or cameraId == 0) and cameraId < numOfCameras: # ignore results before normalization
-                        normalized = True # normalize it
-                        redValue = float(row[4])
-                        greenValue = float(row[1])
-                        blueValue = float(row[0])
-                        whiteValue = 0.299*redValue + 0.587*greenValue + 0.114*blueValue
-                        white[cameraId].append(whiteValue)
-                N = N+1
-            for i in range(len(white)):
-                if len(white[numOfCameras-1]) < len(white[i]):
-                    white[i].pop()
-            return white
-
-    except Exception as e:
-        print(e)
-    return []
-
-
 def graph_plots(plots):
     colors = iter(cm.rainbow(np.linspace(0, 1, len(plots))))
     patches = list()
@@ -113,19 +84,35 @@ def graph_plots(plots):
     plt.legend(handles=patches)
     plt.show()
 
-def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value'):
+def plot_signal_details(plot_oneD):
+    patches = list()
+    label = "mean: " + str(np.mean(plot_oneD))+ "\nstd: "+str(np.std(plot_oneD))
+    patches.append(mpatches.Patch(label=label))
+    plt.scatter(range(len(plot_oneD)), plot_oneD)
+    plt.xlim([0, len(plot_oneD)])
+    plt.legend(handles=patches)
+    plt.show()
+
+def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (None, None)):
     allData = dict() # store everything in a dictionary
-    print("Gestures available: ")
+    M = 0
+    notWrittenName = ""
     for subdir, dirs, files in os.walk(mainDirectory):
         gestureName = os.path.basename(subdir)
         if gestureName != "results":
             if not gestureName.startswith("_"): # ignore all folders starting with _
+                N = 0
                 gestureList = list()
                 for fileName in os.listdir(gestureName):
-                    gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
+                    if (M, N) != excluding:
+                        gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
+                    else:
+                        notWrittenName = gestureName+"/"+fileName
+                    N = N+1
+                M = M+1
                 allData[gestureName] = gestureList
-                print(gestureName)
-    return allData
+    print("without", notWrittenName)
+    return allData, notWrittenName
 
 # Structure of data: dictionary
 # 1st dimension: name of the gesture
