@@ -41,7 +41,7 @@ def readCSV(fileName, numOfCameras = 12):
 #if __name__ == "__main__": 
 #    main()
 
-def readCSV_white(fileName, numOfCameras = 12):
+def readCSV_white(fileName, numOfCameras = 12, method='value'):
     N = 0
     white = [[] for j in range(numOfCameras)]
     try:
@@ -49,12 +49,22 @@ def readCSV_white(fileName, numOfCameras = 12):
         with f:
             reader = csv.reader(f)
             normalized = False
+            prevValue = list()
             for row in reader:
                 if N != 0:
                     cameraId = 8*int(row[2])+int(row[5])
                     if (normalized or cameraId == 0) and cameraId < numOfCameras: # ignore results before normalization and higher camera IDs
                         normalized = True # normalize it
-                        white[cameraId].append(float(row[8])) # convert value to float
+                        if method == 'value':
+                            listContent = float(row[8])
+                        elif method == 'diff':
+                            if len(white[cameraId]) == 0:
+                                listContent = 0
+                                prevValue.append(float(row[8]))
+                            else:
+                                listContent = float(row[8])-prevValue[cameraId]
+                            prevValue[cameraId] = float(row[8]) # set previous value to current value
+                        white[cameraId].append(listContent) # convert value to float
                 N = N+1
             for i in range(len(white)):
                 if len(white[numOfCameras-1]) < len(white[i]):
@@ -63,35 +73,6 @@ def readCSV_white(fileName, numOfCameras = 12):
     except Exception as e:
         print(e)
     return []
-
-def readCSV_convert(fileName, numOfCameras = 12):
-    N = 0
-    white = [[] for j in range(numOfCameras)]
-    try:
-        f = open(fileName, "r")
-        with f:
-            reader = csv.reader(f)
-            normalized = False
-            for row in reader:
-                if N != 0:
-                    cameraId = 8*int(row[2])+int(row[5])
-                    if (normalized or cameraId == 0) and cameraId < numOfCameras: # ignore results before normalization
-                        normalized = True # normalize it
-                        redValue = float(row[4])
-                        greenValue = float(row[1])
-                        blueValue = float(row[0])
-                        whiteValue = 0.299*redValue + 0.587*greenValue + 0.114*blueValue
-                        white[cameraId].append(whiteValue)
-                N = N+1
-            for i in range(len(white)):
-                if len(white[numOfCameras-1]) < len(white[i]):
-                    white[i].pop()
-            return white
-
-    except Exception as e:
-        print(e)
-    return []
-
 
 def graph_plots(plots):
     colors = iter(cm.rainbow(np.linspace(0, 1, len(plots))))
@@ -103,17 +84,38 @@ def graph_plots(plots):
     plt.legend(handles=patches)
     plt.show()
 
-def collectData(mainDirectory = os.getcwd()):
+def plot_signal_details(plot_oneD):
+    patches = list()
+    label = "mean: " + str(np.mean(plot_oneD))+ "\nstd: "+str(np.std(plot_oneD))
+    patches.append(mpatches.Patch(label=label))
+    plt.scatter(range(len(plot_oneD)), plot_oneD)
+    plt.xlim([0, len(plot_oneD)])
+    plt.legend(handles=patches)
+    plt.show()
+
+def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (None, None)):
     allData = dict() # store everything in a dictionary
+    M = 0
+    notWrittenName = ""
     for subdir, dirs, files in os.walk(mainDirectory):
         gestureName = os.path.basename(subdir)
         if gestureName != "results":
-            if not gestureName.startswith("_"):
+            if not gestureName.startswith("_"): # ignore all folders starting with _
+                N = 0
                 gestureList = list()
                 for fileName in os.listdir(gestureName):
-                    print(fileName)
-                    gestureList.append(readCSV_convert(gestureName+"/"+fileName))
-            allData[gestureName] = gestureList
-    return allData
-    
+                    if (M, N) != excluding:
+                        gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
+                    else:
+                        notWrittenName = gestureName+"/"+fileName
+                    N = N+1
+                M = M+1
+                allData[gestureName] = gestureList
+    print("without", notWrittenName)
+    return allData, notWrittenName
 
+# Structure of data: dictionary
+# 1st dimension: name of the gesture
+# 2nd dimension: the nth result reading
+# 3rd dimension: the sensor ID
+# 4th dimension: the reading at time t

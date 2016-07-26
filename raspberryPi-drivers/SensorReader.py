@@ -141,8 +141,8 @@ class SensorReader:
             return int(sec)
 
     def time_msec(self):
-            msec = str(time.strftime('%L'))
-            return int(msec)
+            msec = int(time.time() * 1000) % 1000
+            return msec
 
     def ReadSensors(self):
             "Reads sensor data. Returns a list of lists of sensor readings. Empty lists / readings mean there aren't any sensors or multiplexers for that index."
@@ -165,7 +165,7 @@ class SensorReader:
                                                             rgb['g'] / float(self.max_sensor_val), \
                                                             rgb['b'] / float(self.max_sensor_val), \
                                                             rgb['c'] / float(self.max_sensor_val), \
-                                                            self.time_min(), self.time_sec()]
+                                                            self.time_sec(), self.time_msec()]
                                             x2 = x2*2
                                     else:
                                             x2 = x2*2
