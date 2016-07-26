@@ -2,3 +2,6 @@
 .recommenders
 .Rproj.user
 *.pyc
+
+recorder/results-old/
+recorder/nothing/
