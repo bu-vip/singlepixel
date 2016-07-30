@@ -59,7 +59,7 @@ def readCSV_white(fileName, numOfCameras = 12, method='value'):
                             listContent = float(row[8])
                         elif method == 'diff':
                             if len(white[cameraId]) == 0:
-                                listContent = 0
+                                listContent = 0 # set all initial values to 0
                                 prevValue.append(float(row[8]))
                             else:
                                 listContent = float(row[8])-prevValue[cameraId]
@@ -93,10 +93,10 @@ def plot_signal_details(plot_oneD):
     plt.legend(handles=patches)
     plt.show()
 
-def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (None, None)):
+def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (None, (None,None))):
     allData = dict() # store everything in a dictionary
     M = 0
-    notWrittenName = ""
+    notWrittenName = list()
     for subdir, dirs, files in os.walk(mainDirectory):
         gestureName = os.path.basename(subdir)
         if gestureName != "results":
@@ -104,14 +104,15 @@ def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value',
                 N = 0
                 gestureList = list()
                 for fileName in os.listdir(gestureName):
-                    if (M, N) != excluding:
+                    if not (excluding[1][0]<=N<=excluding[1][1]):
                         gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
                     else:
-                        notWrittenName = gestureName+"/"+fileName
+                        notWrittenName.append(gestureName+"/"+fileName)
                     N = N+1
                 M = M+1
                 allData[gestureName] = gestureList
-    print("without", notWrittenName)
+    for name in notWrittenName:
+        print("except", name)
     return allData, notWrittenName
 
 # Structure of data: dictionary

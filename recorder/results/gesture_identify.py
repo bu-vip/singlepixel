@@ -70,8 +70,10 @@ def identify_gesture(test, train_functions):
     clf.fit(values, keys)
     return clf.predict(test_list)
 
-for i in range(30):
-    identification_dict, missing = collect_data(numOfCameras = numOfCameras, method=method, excluding=(5, i))
-    interp_data = interp_all(identification_dict)
-    print(i, identify_gesture(missing, interp_data))
+#for i in range(30):
+identification_dict, missing = collect_data(numOfCameras = numOfCameras, method=method, excluding=(0, (20,29)))
+interp_data = interp_all(identification_dict)
+for reading in missing:
+    print(reading, identify_gesture(reading, interp_data))
+#    print(i, identify_gesture(missing, interp_data))
 
