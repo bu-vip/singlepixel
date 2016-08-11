@@ -23,8 +23,8 @@ gesture_data = [[] for j in range(numOfCameras)]
 diff_stack = [[] for j in range(numOfCameras)]
 prev_value = [0] * numOfCameras
 threshold = 0.001 # above this average gestures should start
-queueSize = 5
-avgStartSize = 4
+queueSize = 4
+avgStartSize = 3
 
 # The callback for when the client receives a CONNACK response from the server.
 def start_callback(client, userdata, msg):
