@@ -5,7 +5,7 @@ import numpy as np
 
 numOfCameras = 12
 signalDataPoints = 50
-thrsh = 1e-10
+thrsh = 1e-9
 n_neighbors = 3
 method = 'diff'
 
@@ -71,9 +71,9 @@ def identify_gesture(test, train_functions):
     return clf.predict(test_list)
 
 #for i in range(30):
-identification_dict, missing = collect_data(numOfCameras = numOfCameras, method=method, excluding=(0, (20,29)))
-interp_data = interp_all(identification_dict)
-for reading in missing:
-    print(reading, identify_gesture(reading, interp_data))
-#    print(i, identify_gesture(missing, interp_data))
+def main():
+    identification_dict, missing = collect_data(numOfCameras = numOfCameras, method=method, excluding=(0,9))
+    interp_data = interp_all(identification_dict)
+    for reading in missing:
+        print(reading, identify_gesture(reading, interp_data))
 

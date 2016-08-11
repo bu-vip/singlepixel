@@ -67,8 +67,10 @@ def readCSV_white(fileName, numOfCameras = 12, method='value'):
                         white[cameraId].append(listContent) # convert value to float
                 N = N+1
             for i in range(len(white)):
-                if len(white[numOfCameras-1]) < len(white[i]):
-                    white[i].pop()
+                if len(white[numOfCameras-1]) < len(white[i]): # if there are too many elements in list
+                    white[i].pop() # remove last element from list
+                if method == 'diff': # if method = diff
+                    white[i].pop(0) # remove first element from list, since it's 0
             return white
     except Exception as e:
         print(e)
@@ -93,7 +95,7 @@ def plot_signal_details(plot_oneD):
     plt.legend(handles=patches)
     plt.show()
 
-def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (None, (None,None))):
+def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value', excluding = (10000,10000)):
     allData = dict() # store everything in a dictionary
     M = 0
     notWrittenName = list()
@@ -104,7 +106,7 @@ def collect_data(mainDirectory = os.getcwd(), numOfCameras = 12, method='value',
                 N = 0
                 gestureList = list()
                 for fileName in os.listdir(gestureName):
-                    if not (excluding[1][0]<=N<=excluding[1][1]):
+                    if not (excluding[0]<=N<=excluding[1]):
                         gestureList.append(readCSV_white(gestureName+"/"+fileName, numOfCameras=numOfCameras, method=method))
                     else:
                         notWrittenName.append(gestureName+"/"+fileName)

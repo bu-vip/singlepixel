@@ -2,3 +2,6 @@
 .recommenders
 .Rproj.user
 *.pyc
+
+results-old/
+nothing/
