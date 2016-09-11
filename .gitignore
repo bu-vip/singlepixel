@@ -2,3 +2,4 @@
 .recommenders
 .Rproj.user
 *.pyc
+npm-debug.log
