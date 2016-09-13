@@ -37,6 +37,7 @@ def main():
     parser.add_argument('--topic', action="store", dest="mqtt_prefix", default="", help="Base topic to broadcast on. Defaults to none.")
     parser.add_argument('--time', action="store", dest="sensor_time", default=0xD5, type=arg_sensor_time, help="Integration time for the sensors, in milliseconds. Must be in range: [2.4, 612]. Defaults to 100.8ms")
     parser.add_argument('--gain', action="store", dest="sensor_gain", default=1, type=arg_sensor_gain, help="Gain for sensors. Must be one of: [1, 4, 16, 60] Defaults to 1.")
+    parser.add_argument('--group', action="store", dest="group_id", default="0", help='Group id on MQTT.')
     args = parser.parse_args()
 
     # create mqtt client
@@ -71,7 +72,7 @@ def main():
                     # non existant sensors will produce an empty list
                     if len(sensorData) == 6:
                         # topic for data: <prefix>/group/<group-id>/sensor/<sensor-id>
-                        topic = args.mqtt_prefix + "/group/" + str(muxId) + "/sensor/" + str(sensorId)
+                        topic = args.mqtt_prefix + "/group/" + str(args.group_id) + "/sensor/" + str(muxId * 8 + sensorId)
                         # payload is "R,G,B,W,t1,t2"
                         payload = str(sensorData[0]) + ", " + str(sensorData[1]) + ", " + str(sensorData[2])
                         payload += ", " + str(sensorData[3]) + ", " + str(sensorData[4]) + ", " + str(sensorData[5])
