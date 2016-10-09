@@ -139,9 +139,11 @@ sensorService.factory('SensorService', ['$rootScope', "$timeout", function ($roo
                         console.log('Invalid sensor reading size')
                     } else {
                         // convert to number array
-                        var numArray = []
+                        var numArray = [];
                         for (var i = 0; i < messageContents.length; i++) {
-                            numArray.push(Number(messageContents[i]))
+                          var sig = 10000;
+                          var max = 0.3;
+                            numArray.push(Math.floor(Number(messageContents[i]) / max * sig) / sig)
                         }
                         //sensor.value = numArray
                         sensor.addReading(numArray);
