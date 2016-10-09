@@ -86,7 +86,7 @@ def main():
             else:
                 # Stop if we can't poll fast enough, no point in continuing
                 print ("Can't poll sensors fast enough. This is normally caused by a really short integration time.")
-                break
+                # break
 
     except KeyboardInterrupt:
         print ('Stopping...')
