@@ -24,9 +24,9 @@ function sensors(state = new Map(), action) {
       let data = sensor.data;
       data = data.push(action.reading);
       // Only keep X measurements
-      const MAX_READINGS = 200;
+      const MAX_READINGS = 30;
       if (data.size > MAX_READINGS) {
-        data = data.slice(0, MAX_READINGS);
+        data = data.slice(data.size - MAX_READINGS, data.size);
       }
       sensor = sensor.set('data', data);
 

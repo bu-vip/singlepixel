@@ -51,7 +51,7 @@ class SensorService {
   };
 
   onMessageArrived = (message) => {
-    console.log("onMessageArrived:" + message.payloadString);
+    //console.log("onMessageArrived:" + message.payloadString);
     // Topic example:
     //    /<prefix>/group/<group-id>/sensor/<sensor-id>
     // Split the topic into it's levels

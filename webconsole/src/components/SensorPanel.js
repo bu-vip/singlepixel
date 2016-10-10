@@ -4,7 +4,7 @@ import {Line} from 'react-chartjs-2';
 
 let styles = {
     base: {
-        width: 400,
+        width: '20%',
         borderStyle: 'solid',
         borderColor: 'rgba(100, 100, 100, 0.1)',
         borderWidth: 1
@@ -20,33 +20,37 @@ class SensorPanel extends Component {
   render() {
 
     let labels = [];
-    let redData = [];
-    let greenData = [];
-    let blueData = [];
-    let whiteData = [];
+    let data = {
+        red: [],
+        green: [],
+        blue: [],
+        white: []
+    };
     this.props.sensor.data.forEach((reading) => {
         labels.push(reading.timestamp);
-        redData.push(reading.red);
-        greenData.push(reading.green);
-        blueData.push(reading.blue);
-        whiteData.push(reading.white);
+        data.red.push(reading.red);
+        data.green.push(reading.green);
+        data.blue.push(reading.blue);
+        data.white.push(reading.white);
     });
-    let data = [redData, greenData, blueData, whiteData];
 
-    let redColor = 'rgba(255, 0, 0, 0.3)';
-    let greenColor = 'rgba(0, 255, 0, 0.3)';
-    let blueColor = 'rgba(0, 0, 255, 0.3)';
-    let whiteColor = 'rgba(100, 100, 100, 0.3)';
-    let colors = [redColor, greenColor, blueColor, whiteColor];
+    let colors = {
+        red: 'rgba(255, 0, 0, 0.3)',
+        green: 'rgba(0, 255, 0, 0.3)',
+        blue: 'rgba(0, 0, 255, 0.3)',
+        white: 'rgba(100, 100, 100, 0.3)'
+    }
 
     let datasets = [];
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < this.props.channels.length; i++) {
+        let channel = this.props.channels[i];
         datasets.push({
-            fill: false,
-            borderColor: colors[i],
-            pointBackgroundColor: colors[i],
-            pointBorderColor: colors[i],
-            data: data[i]
+            fill: true,
+            borderColor: colors[channel],
+            backgroundColor: colors[channel],
+            pointBackgroundColor: colors[channel],
+            pointBorderColor: colors[channel],
+            data: data[channel]
         });
     }
 
@@ -61,6 +65,15 @@ class SensorPanel extends Component {
         },
         legend: {
             display: false
+        },
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true,
+                    max: 0.5,
+                    min: 0
+                }
+            }]
         }
     };
 
