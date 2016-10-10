@@ -1,3 +1,0 @@
-# webconsole
-
-Describe webconsole here.

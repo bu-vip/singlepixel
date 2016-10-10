@@ -3,19 +3,14 @@ import {connect} from 'react-redux';
 import SensorView from './SensorView';
 
 const mapStateToProps = (state, ownProps) => {
-  let sensors = [];
-  state.sensors.forEach((sensor) => {
-    sensors.push({
-      id: sensor.id,
-      labels: [],
-      data: []
-    });
+  let groups = [];
+  state.sensors.forEach((groupMap, groupId) => {
+    let sensors = [];
+    groupMap.forEach((sensor) => { sensors.push(sensor); });
+    groups.push({id : groupId, sensors});
   });
 
-  return {
-    sensors,
-    isConnected: state.isConnected
-  };
+  return {groups, isConnected : state.isConnected};
 };
 
 const mapDispatchToProps = (dispatch) => { return {}; };
