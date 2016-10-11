@@ -70,7 +70,7 @@ class SensorPanel extends Component {
             yAxes: [{
                 ticks: {
                     beginAtZero: true,
-                    max: 0.5,
+                    suggestedMax: 0.5,
                     min: 0
                 }
             }]

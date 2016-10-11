@@ -7,6 +7,9 @@ const mapStateToProps = (state, ownProps) => {
   state.sensors.forEach((groupMap, groupId) => {
     let sensors = [];
     groupMap.forEach((sensor) => { sensors.push(sensor); });
+    sensors.sort((a, b) => {
+      return a.id.localeCompare(b.id);
+    })
     groups.push({id : groupId, sensors});
   });
 

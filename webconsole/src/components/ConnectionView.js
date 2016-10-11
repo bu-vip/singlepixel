@@ -1,7 +1,26 @@
 import Radium from 'radium';
 import React, {Component, PropTypes} from 'react';
 
-let styles = {base : {}};
+let styles = {
+    base : {
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column'
+    },
+    field: {
+        marginBottom: 10
+    },
+    label: {
+
+    },
+    input: {
+
+    },
+    button: {
+        width: 80,
+        height: 20
+    }
+};
 
 @Radium
 class ConnectionView extends Component {
@@ -43,30 +62,38 @@ class ConnectionView extends Component {
   render() {
     if (!this.props.connected) {
         return (<div style={[styles.base]}>
-            Host:
-            <input
-                type = "text"
-                value = { this.state.host }
-                onChange =
-                {
-                    this.handleHostChange
-                } />
-                Port:
+            <div style={[styles.field]}>
+                <div style={[styles.label]}>Host</div>
                 <input
-                    type="number"
-                    value={this.state.port}
-                    onChange={this.handlePortChange}/ >
-                    Prefix: < input
+                    style={[styles.input]}
                     type = "text"
-                    value={
-                        this.state.prefix}
-                        onChange={
-                            this.handlePrefixChange}/>
-                        <button onClick={this.handleConnect}>Connect</button>
-                        Connectionview
-                    </div>);
+                    value = { this.state.host }
+                    onChange = {this.handleHostChange} />
+                </div>
+                <div style={[styles.field]}>
+                <div style={[styles.label]}>Port</div>
+                    <input
+                        style={[styles.input]}
+                        type="number"
+                        value={this.state.port}
+                        onChange={this.handlePortChange} />
+                </div>
+                <div style={[styles.field]}>
+                <div style={[styles.label]}>Prefix</div>
+                    <input
+                        style={[styles.input]}
+                        type = "text"
+                        value={this.state.prefix}
+                        onChange={this.handlePrefixChange}/>
+                </div>
+                <button
+                    style={[styles.button]}
+                    onClick={this.handleConnect}>Connect</button>
+            </div>);
     } else {
-        return (<button onClick={this.handleDisconnect}>Disconnect</button>)
+        return (<button
+            style={[styles.button]}
+            onClick={this.handleDisconnect}>Disconnect</button>)
     }
   }
 }
