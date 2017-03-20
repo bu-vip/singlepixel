@@ -1,4 +1,0 @@
-hostname: tcp://localhost:1883
-username: admin
-password: password
-topicPrefix:

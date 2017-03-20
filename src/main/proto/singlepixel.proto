@@ -1,0 +1,18 @@
+syntax = 'proto3';
+
+import "thirdparty/protobuf/google/protobuf/timestamp.proto";
+
+package bu.vip.singlepixel;
+
+option java_package = "edu.bu.vip.singlepixel";
+option java_outer_classname = "Grpc";
+
+message SinglePixelSensorReading {
+  string group_id = 1;
+  string sensor_id = 2;
+  double red = 3;
+  double green = 4;
+  double blue = 5;
+  double white = 6;
+  google.protobuf.Timestamp ntp_capture_time = 7;
+}
