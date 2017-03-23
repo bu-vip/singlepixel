@@ -9,7 +9,7 @@ p = javaclasspath
 
 % Create the reader
 topicPrefix = '';
-hostname = 'tcp://test.mosquitto.org:1883';
+hostname = 'tcp://localhost:1883';
 numReadings = 12;
 reader = javaObject('edu.bu.vip.singlepixel.matlab.MatlabMqtt', topicPrefix, hostname, numReadings);
 
