@@ -1,5 +1,6 @@
 syntax = 'proto3';
 
+//import "google/protobuf/timestamp.proto";
 import "thirdparty/protobuf/google/protobuf/timestamp.proto";
 
 package bu.vip.singlepixel;
@@ -13,6 +14,6 @@ message SinglePixelSensorReading {
   double red = 3;
   double green = 4;
   double blue = 5;
-  double white = 6;
+  double clear = 6;
   google.protobuf.Timestamp ntp_capture_time = 7;
 }

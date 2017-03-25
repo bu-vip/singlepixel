@@ -12,6 +12,7 @@ java_binary(
     ],
 )
 
+"""
 java_toolchain(
     name = "toolchain",
     bootclasspath = ["@bazel_tools//tools/jdk:bootclasspath"],
@@ -35,4 +36,4 @@ java_toolchain(
     source_version = "7",
     target_version = "7",
     visibility = ["//visibility:public"],
-)
+)"""

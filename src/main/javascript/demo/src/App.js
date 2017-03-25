@@ -11,6 +11,12 @@ class App extends Component {
     super(props);
 
     this.state = {
+      bounds: {
+        minX: 0,
+        maxX: 5,
+        minY: 0,
+        maxY: 5
+      },
       occupants: [
         {
           id: 1,
@@ -32,34 +38,43 @@ class App extends Component {
 
   render() {
 
-    let data = {
-      datasets: [{
-        label: 'Scatter Dataset',
-        fill: false,
+    let datasets = this.state.occupants.map((person) => {
+      return {
+        label: 'Person ' + person.id,
         showLine: false,
+        fill: false,
+        pointRadius: 20,
+        pointHoverRadius: 20,
+        pointBackgroundColor: 'rgba(0, 0, 200, 1)',
         data: [
-          {
-            x: -10,
-            y: 0
-          },
-          {
-            x: 0,
-            y: 10
-          },
-          {
-            x: 10,
-            y: 5
-          }
-        ],
-      }]
+          person.position
+        ]
+      };
+    });
+
+    let data = {
+      datasets: datasets
     };
 
     let options = {
       scales: {
         xAxes: [{
           type: 'linear',
-          position: 'bottom'
+          position: 'bottom',
+          ticks: {
+            min: this.state.bounds.minX,
+            max: this.state.bounds.maxX,
+          }
+        }],
+        yAxes: [{
+          ticks: {
+            min: this.state.bounds.minY,
+            max: this.state.bounds.maxY,
+          }
         }]
+      },
+      legend: {
+        display: false
       }
     };
 
