@@ -13,16 +13,16 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from thirdparty.protobuf.google.protobuf import timestamp_pb2 as thirdparty_dot_protobuf_dot_google_dot_protobuf_dot_timestamp__pb2
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='src/main/proto/singlepixel.proto',
   package='bu.vip.singlepixel',
   syntax='proto3',
-  serialized_pb=_b('\n src/main/proto/singlepixel.proto\x12\x12\x62u.vip.singlepixel\x1a\x33thirdparty/protobuf/google/protobuf/timestamp.proto\"\xae\x01\n\x18SinglePixelSensorReading\x12\x10\n\x08group_id\x18\x01 \x01(\t\x12\x11\n\tsensor_id\x18\x02 \x01(\t\x12\x0b\n\x03red\x18\x03 \x01(\x01\x12\r\n\x05green\x18\x04 \x01(\x01\x12\x0c\n\x04\x62lue\x18\x05 \x01(\x01\x12\r\n\x05\x63lear\x18\x06 \x01(\x01\x12\x34\n\x10ntp_capture_time\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampB \n\x16\x65\x64u.bu.vip.singlepixelB\x06Protosb\x06proto3')
+  serialized_pb=_b('\n src/main/proto/singlepixel.proto\x12\x12\x62u.vip.singlepixel\x1a\x1fgoogle/protobuf/timestamp.proto\"\xae\x01\n\x18SinglePixelSensorReading\x12\x10\n\x08group_id\x18\x01 \x01(\t\x12\x11\n\tsensor_id\x18\x02 \x01(\t\x12\x0b\n\x03red\x18\x03 \x01(\x01\x12\r\n\x05green\x18\x04 \x01(\x01\x12\x0c\n\x04\x62lue\x18\x05 \x01(\x01\x12\r\n\x05\x63lear\x18\x06 \x01(\x01\x12\x34\n\x10ntp_capture_time\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampB \n\x16\x65\x64u.bu.vip.singlepixelB\x06Protosb\x06proto3')
   ,
-  dependencies=[thirdparty_dot_protobuf_dot_google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,])
+  dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -96,11 +96,11 @@ _SINGLEPIXELSENSORREADING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=110,
-  serialized_end=284,
+  serialized_start=90,
+  serialized_end=264,
 )
 
-_SINGLEPIXELSENSORREADING.fields_by_name['ntp_capture_time'].message_type = thirdparty_dot_protobuf_dot_google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
+_SINGLEPIXELSENSORREADING.fields_by_name['ntp_capture_time'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
 DESCRIPTOR.message_types_by_name['SinglePixelSensorReading'] = _SINGLEPIXELSENSORREADING
 
 SinglePixelSensorReading = _reflection.GeneratedProtocolMessageType('SinglePixelSensorReading', (_message.Message,), dict(
