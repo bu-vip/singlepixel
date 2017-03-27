@@ -6,7 +6,7 @@ import "thirdparty/protobuf/google/protobuf/timestamp.proto";
 package bu.vip.singlepixel;
 
 option java_package = "edu.bu.vip.singlepixel";
-option java_outer_classname = "Grpc";
+option java_outer_classname = "Protos";
 
 message SinglePixelSensorReading {
   string group_id = 1;

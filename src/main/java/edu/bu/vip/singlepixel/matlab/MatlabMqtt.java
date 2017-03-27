@@ -2,7 +2,7 @@ package edu.bu.vip.singlepixel.matlab;
 
 import com.google.common.collect.EvictingQueue;
 import com.google.protobuf.InvalidProtocolBufferException;
-import edu.bu.vip.singlepixel.Grpc.SinglePixelSensorReading;
+import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

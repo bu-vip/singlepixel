@@ -14,6 +14,7 @@ java_binary(
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller",
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller/webconsole",
         ":singlepixelsensorplugin",
+        "//:com_google_guava_guava",
         "//:org_slf4j_slf4j_api",
         "//:org_slf4j_slf4j_log4j12",
     ],
@@ -26,6 +27,7 @@ java_library(
     ],
     deps = [
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller/plugin:plugin",
+        "//:com_google_guava_guava",
         "//:com_google_protobuf_protobuf_java",
         "//:org_eclipse_paho_client_mqttv3",
         "//:org_slf4j_slf4j_api",

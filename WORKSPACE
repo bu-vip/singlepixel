@@ -75,6 +75,28 @@ local_repository(
     path = "/home/doug/Development/bu_code/research/multikinect",
 )
 
+http_jar(
+    name = "tensorflow_java_api",
+    url = "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-1.0.0-PREVIEW1.jar",
+)
+
+# TODO(doug) - Support OSX
+new_http_archive(
+    name = "tensorflow_java_api_jni",
+    url = "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow_jni-cpu-linux-x86_64-1.0.0-PREVIEW1.tar.gz",
+    build_file = "thirdparty/BUILD.tensorflow_java_api_jni",
+)
+
+
+git_repository(
+  name = "com_google_protobuf",
+  remote = "https://github.com/google/protobuf",
+  tag = "v3.2.0",
+)
+
+
+
+
 # proto build rules
 git_repository(
   name = "org_pubref_rules_protobuf",
