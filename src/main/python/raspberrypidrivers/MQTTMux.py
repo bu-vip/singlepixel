@@ -85,7 +85,7 @@ def main():
                         topic += "/group/" + str(args.group_id)
                         topic += "/sensor/" + str(mux_id * 8 + sensor_id)
                         # Payload is protobuf as binary
-                        payload = sensor_data.SerializeAsString()
+                        payload = sensor_data.SerializeToString()
                         client.publish(topic, payload)
             # Calculate the time we need to sleep to prevent over-polling the sensors
             end_time = time.time()
