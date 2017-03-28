@@ -80,12 +80,14 @@ def main():
                     sensor_data = mux_data[sensor_id]
                     # Check for sensor data, missing sensor will produce a None reading
                     if sensor_data is not None:
+                        sensor_data.group_id = args.group_id
+                        sensor_data.sensor_id = str(mux_id * 8 + sensor_id)
                         # Topic for data: <prefix>/group/<group-id>/sensor/<sensor-id>
                         topic = args.mqtt_prefix
-                        topic += "/group/" + str(args.group_id)
-                        topic += "/sensor/" + str(mux_id * 8 + sensor_id)
+                        topic += "/group/" + sensor_data.group_id
+                        topic += "/sensor/" + sensor_data.sensor_id
                         # Payload is protobuf as binary
-                        payload = sensor_data.SerializeToString()
+                        payload = bytearray(sensor_data.SerializeToString())
                         client.publish(topic, payload)
             # Calculate the time we need to sleep to prevent over-polling the sensors
             end_time = time.time()

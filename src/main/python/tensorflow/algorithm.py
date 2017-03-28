@@ -10,6 +10,7 @@ from tensorflow.python.framework import graph_util
 
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
+from read_session import combine_data
 
 
 def batch_of(data, labels, size):
@@ -201,3 +202,15 @@ def walks_test():
 
     acc = train_and_evaluate(training_walks, testing_walks, filename="./models/model")
     print(acc)
+
+def v2_test():
+    root_dir = "../../resources/datav2/1791105382/"
+    recordings = [
+        '8222090828264813243'
+    ]
+
+    recording_dir = os.path.join(root_dir, recordings[0])
+    combine_data(recording_dir)
+
+
+v2_test()
