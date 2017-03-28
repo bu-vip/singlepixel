@@ -2,9 +2,10 @@ import os
 from glob import glob
 from os.path import basename
 
-import frame_pb2
+import numpy as np
 import realtime_pb2
 import singlepixel_pb2
+from frame_pb2 import Frame, Joint
 from google.protobuf.internal import decoder
 
 
@@ -87,6 +88,11 @@ def find_sp_readings_for_time(ntp_time, sp_all_readings, sp_indexes):
                 # No more readings, at end
                 return None
         sp_readings[sp_id] = readings[sp_indexes[sp_id]]
+
+    # Only return mappings with all sensors
+    if len(sp_readings) != len(sp_all_readings):
+        return None
+
     return sp_readings
 
 
@@ -95,7 +101,7 @@ def read_raw_camera_data(recording_dir):
     for camera_file in glob(os.path.join(recording_dir, "cameras", "*.pbdat")):
         file_name = basename(camera_file)
         camera_id = os.path.splitext(file_name)[0]
-        camera_readings[camera_id] = read_delimited_protos_file(frame_pb2.Frame, camera_file)
+        camera_readings[camera_id] = read_delimited_protos_file(Frame, camera_file)
     return camera_readings
 
 
@@ -159,7 +165,84 @@ def combine_data(recording_dir):
             }
             combined.append(new_point)
 
-    print(combined)
-
     return combined
 
+
+CENTER_JOINTS = [
+    Joint.SPINE_BASE,
+    Joint.SPINE_MID,
+    Joint.NECK_,
+    Joint.SPINE_SHOULDER
+]
+
+
+def calculate_average_position(combined_skeleton):
+    pos_sum = [0, 0, 0]
+    joint_count = 0
+    for joint in combined_skeleton.skeleton.joints:
+        if joint.type in CENTER_JOINTS:
+            joint_pos = joint.position
+            pos_sum[0] += joint_pos.x
+            pos_sum[1] += joint_pos.y
+            pos_sum[2] += joint_pos.z
+            joint_count += 1
+
+    if joint_count == 0:
+        return None
+
+    return [val / float(joint_count) for val in pos_sum]
+
+
+def reading_to_feature(reading):
+    return np.array([reading.red, reading.green, reading.blue, reading.clear])
+
+
+def readings_dict_to_features(dict):
+    final = None
+    for key in sorted(dict):
+        converted = reading_to_feature(dict[key])
+        if final is None:
+            final = converted
+        else:
+            final = np.concatenate([final, converted])
+    return final
+
+
+def combined_to_feature(combined):
+    labels = []
+    for skeleton in combined['synced'].skeletons:
+        avg_pos = calculate_average_position(skeleton)
+        labels += [avg_pos[0], avg_pos[2]]
+    features = readings_dict_to_features(combined['sp'])
+    return np.array(labels), features
+
+
+def combined_to_features(combined):
+    all_labels = []
+    all_features = []
+    for data in combined:
+        labels, features = combined_to_feature(data)
+        all_labels.append(labels)
+        all_features.append(features)
+
+    return np.array(all_labels), np.array(all_features)
+
+
+def filter_by_number_skeletons(combined):
+    clips = {}
+    last_skeleton_count = -1
+    current_clip = []
+    for frame in combined:
+        synced = frame['synced']
+        if last_skeleton_count != len(synced.skeletons):
+            if len(current_clip) > 0:
+                # Add list if needed
+                if last_skeleton_count not in clips:
+                    clips[last_skeleton_count] = []
+                clips[last_skeleton_count].append(current_clip)
+            current_clip = []
+            last_skeleton_count = len(synced.skeletons)
+
+        current_clip.append(frame)
+
+    return clips

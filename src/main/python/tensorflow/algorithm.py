@@ -10,7 +10,7 @@ from tensorflow.python.framework import graph_util
 
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
-from read_session import combine_data
+from read_session import combine_data, filter_by_number_skeletons, combined_to_features
 
 
 def batch_of(data, labels, size):
@@ -203,6 +203,7 @@ def walks_test():
     acc = train_and_evaluate(training_walks, testing_walks, filename="./models/model")
     print(acc)
 
+
 def v2_test():
     root_dir = "../../resources/datav2/1791105382/"
     recordings = [
@@ -210,7 +211,31 @@ def v2_test():
     ]
 
     recording_dir = os.path.join(root_dir, recordings[0])
-    combine_data(recording_dir)
+    combined = combine_data(recording_dir)
+    clipped = filter_by_number_skeletons(combined)
+
+    print(combined_to_features(clipped[2][0]))
+
+    single_person_clips = clipped[1]
+    all_labels, all_data = combined_to_features(single_person_clips[0])
+    for clip in single_person_clips[1:]:
+        labels, data = combined_to_features(clip)
+        all_labels = np.concatenate([all_labels, labels])
+        all_data = np.concatenate([all_data, data])
+
+    data_middle = int(len(all_data) / 2)
+    train_data = all_data[:data_middle]
+    test_data = all_data[data_middle:]
+    label_middle = int(len(all_labels) / 2)
+    train_labels = all_labels[:label_middle]
+    test_labels = all_labels[label_middle:]
+    filename = "./models/model_v2"
+
+    # Run the algorithm
+    accuracy, predictions = train_algorithm_v2(train_data, train_labels,
+                                               test_data, test_labels,
+                                               filename)
+    print(accuracy, predictions)
 
 
 v2_test()
