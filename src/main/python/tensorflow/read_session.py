@@ -175,22 +175,24 @@ CENTER_JOINTS = [
     Joint.SPINE_SHOULDER
 ]
 
-
 def calculate_average_position(combined_skeleton):
-    pos_sum = [0, 0, 0]
+    pos_sum = np.array([0, 0, 0])
+    all_pos_sum = np.array([0, 0, 0])
     joint_count = 0
+    all_joint_count = 0
     for joint in combined_skeleton.skeleton.joints:
-        if joint.type in CENTER_JOINTS:
-            joint_pos = joint.position
-            pos_sum[0] += joint_pos.x
-            pos_sum[1] += joint_pos.y
-            pos_sum[2] += joint_pos.z
-            joint_count += 1
+        joint_pos = [joint.position.x, joint.position.y, joint.position.z]
+        if np.isnan(joint_pos).any() == False:
+            if joint.type in CENTER_JOINTS or True:
+                pos_sum = np.add(pos_sum, joint_pos)
+                joint_count += 1
+            all_pos_sum = np.add(all_pos_sum, joint_pos)
+            all_joint_count += 1
 
     if joint_count == 0:
-        return None
+        return all_pos_sum * 1.0 / all_joint_count
 
-    return [val / float(joint_count) for val in pos_sum]
+    return pos_sum * 1.0 / joint_count
 
 
 def reading_to_feature(reading):
@@ -246,3 +248,8 @@ def filter_by_number_skeletons(combined):
         current_clip.append(frame)
 
     return clips
+
+def get_bounds(labels):
+    mins = np.amin(labels, axis=0)
+    maxs = np.amax(labels, axis=0)
+    return mins[0], maxs[0], mins[1], maxs[1]

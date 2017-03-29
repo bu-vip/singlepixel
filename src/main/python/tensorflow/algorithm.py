@@ -1,4 +1,5 @@
 import os
+import shutil
 from random import randint
 
 import matplotlib
@@ -10,7 +11,7 @@ from tensorflow.python.framework import graph_util
 
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
-from read_session import combine_data, filter_by_number_skeletons, combined_to_features
+from read_session import combine_data, filter_by_number_skeletons, combined_to_features, get_bounds
 
 
 def batch_of(data, labels, size):
@@ -90,48 +91,53 @@ def train_algorithm(train_data, train_one_hot, test_data, test_one_hot,
         return test_accuracy, predictions
 
 
-def train_algorithm_v2(train_data, train_one_hot, test_data, test_one_hot, model_dir):
+def train_algorithm_v2(train_data, train_labels, test_data, test_labels, model_dir):
     feature_len = len(train_data[0])
     feature_columns = [tf.contrib.layers.real_valued_column("", dimension=feature_len)]
 
     hidden_units = [100, 100, 100]
+    model_x_dir = model_dir + "_x"
+    shutil.rmtree(model_x_dir)
     estimator_x = DNNRegressor(
         feature_columns=feature_columns,
         hidden_units=hidden_units,
-        model_dir=model_dir + "_x"
+        model_dir=model_x_dir
     )
+
+    model_y_dir = model_dir + "_y"
+    shutil.rmtree(model_y_dir)
     estimator_y = DNNRegressor(
         feature_columns=feature_columns,
         hidden_units=hidden_units,
-        model_dir=model_dir + "_y"
+        model_dir=model_y_dir
     )
 
-    steps = 2000
+    steps = 10000
 
     def input_fn_train_x():
         x = tf.constant(train_data)
-        y = tf.constant(train_one_hot[:, 0])
+        y = tf.constant(train_labels[:, 0])
         return x, y
 
     estimator_x.fit(input_fn=input_fn_train_x, steps=steps)
 
     def input_fn_train_y():
         x = tf.constant(train_data)
-        y = tf.constant(train_one_hot[:, 1])
+        y = tf.constant(train_labels[:, 1])
         return x, y
 
     estimator_y.fit(input_fn=input_fn_train_y, steps=steps)
 
     def input_fn_eval_x():
         x = tf.constant(test_data)
-        y = tf.constant(test_one_hot[:, 0])
+        y = tf.constant(test_labels[:, 0])
         return x, y
 
     estimator_x.evaluate(input_fn=input_fn_eval_x, steps=1)
 
     def input_fn_eval_y():
         x = tf.constant(test_data)
-        y = tf.constant(test_one_hot[:, 1])
+        y = tf.constant(test_labels[:, 1])
         return x, y
 
     estimator_y.evaluate(input_fn=input_fn_eval_y, steps=1)
@@ -143,7 +149,7 @@ def train_algorithm_v2(train_data, train_one_hot, test_data, test_one_hot, model
     i = 0
     for pred_x, pred_y in zip(predictions_x, predictions_y):
         predicted = [pred_x, pred_y]
-        actual = test_one_hot[i]
+        actual = test_labels[i]
         diff = actual - predicted
         sq_dist = diff[0] * diff[0] + diff[1] * diff[1]
         i += 1
@@ -205,17 +211,17 @@ def walks_test():
 
 
 def v2_test():
-    root_dir = "../../resources/datav2/1791105382/"
+    root_dir = "../../resources/datav2/882188772/"
     recordings = [
-        '8222090828264813243'
+        '316715123336182773'
     ]
 
+    # Load and combine data
     recording_dir = os.path.join(root_dir, recordings[0])
     combined = combine_data(recording_dir)
     clipped = filter_by_number_skeletons(combined)
 
-    print(combined_to_features(clipped[2][0]))
-
+    # Combine all clips with 1 person into giant matrices
     single_person_clips = clipped[1]
     all_labels, all_data = combined_to_features(single_person_clips[0])
     for clip in single_person_clips[1:]:
@@ -223,6 +229,13 @@ def v2_test():
         all_labels = np.concatenate([all_labels, labels])
         all_data = np.concatenate([all_data, data])
 
+    # Tensorflow works on float32s
+    all_labels = all_labels.astype(np.float32)
+    all_data = all_data.astype(np.float32)
+
+    print("Bounds: ", get_bounds(all_labels))
+
+    # Split data in half
     data_middle = int(len(all_data) / 2)
     train_data = all_data[:data_middle]
     test_data = all_data[data_middle:]
@@ -237,5 +250,3 @@ def v2_test():
                                                filename)
     print(accuracy, predictions)
 
-
-v2_test()
