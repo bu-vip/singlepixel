@@ -5,13 +5,17 @@ from random import randint
 import matplotlib
 import numpy as np
 import tensorflow as tf
+from google.protobuf import text_format
 from numpy import genfromtxt
 from tensorflow.contrib.learn import DNNRegressor
+from tensorflow.core.framework import graph_pb2
 from tensorflow.python.framework import graph_util
 
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 from read_session import combine_data, filter_by_number_skeletons, combined_to_features, get_bounds
+
+from nn import Regressor
 
 
 def batch_of(data, labels, size):
@@ -90,8 +94,13 @@ def train_algorithm(train_data, train_one_hot, test_data, test_one_hot,
         predictions = sess.run(y, feed_dict={x: test_data, y_: test_one_hot})
         return test_accuracy, predictions
 
+def convert_model_text_to_binary(model_file, out_file):
+    graph_def = graph_pb2.GraphDef()
+    with open(model_file, "r") as f:
+        text_format.Merge(f.read(), graph_def)
+    tf.train.write_graph(graph_def, '.', out_file, as_text=False)
 
-def train_algorithm_v2(train_data, train_labels, test_data, test_labels, model_dir):
+def train_algorithm_v2(train_data, train_labels, test_data, test_labels, model_dir, save_model):
     feature_len = len(train_data[0])
     feature_columns = [tf.contrib.layers.real_valued_column("", dimension=feature_len)]
 
@@ -156,8 +165,33 @@ def train_algorithm_v2(train_data, train_labels, test_data, test_labels, model_d
         sum += pow(sq_dist, 0.5)
     distance = sum / i
 
+    x_graph_file = os.path.join(model_x_dir, "graph.pbtxt")
+    x_model = os.path.join(save_model, "model_x.pb")
+    convert_model_text_to_binary(x_graph_file, x_model)
+
+    y_graph_file = os.path.join(model_y_dir, "graph.pbtxt")
+    y_model = os.path.join(save_model, "model_y.pb")
+    convert_model_text_to_binary(y_graph_file, y_model)
+
     return distance, zip(predictions_x, predictions_y)
 
+
+def train_algorithm_v3(train_data, train_labels, test_data, test_labels, model_dir, save_model):
+
+
+
+
+    pass
+
+def calc_distance(actual, predicted):
+    diff = np.absolute(actual - predicted)
+    squared = diff * diff
+    summed = np.sum(squared, axis=1)
+    sqrt = np.sqrt(summed)
+    distance = np.mean(sqrt)
+    distances = np.mean(diff, axis=0)
+
+    return distance, distances
 
 def walk_to_features(walk):
     labels = walk[:, 0:2]
@@ -175,21 +209,8 @@ def walks_to_feature(walks):
     return all_labels, all_data
 
 
-def train_and_evaluate(training_walks, testing_walks, graph=False,
-                       filename=None):
-    # Convert data to features
-    train_labels, train_data = walks_to_feature(training_walks)
-    test_labels, test_data = walks_to_feature(testing_walks)
-
-    # Run the algorithm
-    accuracy, predictions = train_algorithm_v2(train_data, train_labels,
-                                               test_data, test_labels,
-                                               filename)
-
-    return accuracy
-
-
 def walks_test():
+    print("Walk test")
     # Load data
     root_dir = "../../resources/datav1/track5"
     people = ['dan', 'doug', 'jiawei', 'pablo']
@@ -206,11 +227,23 @@ def walks_test():
     training_walks = data[0] + data[1]
     testing_walks = data[2] + data[3]
 
-    acc = train_and_evaluate(training_walks, testing_walks, filename="./models/model")
-    print(acc)
+    # Convert data to features
+    train_labels, train_data = walks_to_feature(training_walks)
+    test_labels, test_data = walks_to_feature(testing_walks)
+
+    regressor = Regressor(len(train_data[0]), 1, [])
+    regressor.train(train_labels[:, [0]], train_data, test_labels[:, [0]], test_data)
+
+    # Run the algorithm
+    accuracy, predictions = train_algorithm(train_data, train_labels,
+                                               test_data, test_labels,
+                                               None)
+    print(accuracy)
 
 
 def v2_test():
+    print("V2 test")
+
     root_dir = "../../resources/datav2/882188772/"
     recordings = [
         '316715123336182773'
@@ -243,10 +276,27 @@ def v2_test():
     train_labels = all_labels[:label_middle]
     test_labels = all_labels[label_middle:]
     filename = "./models/model_v2"
+    model_dir = "./models/"
+
+    num_epochs = 10000
+
+    regressor = Regressor(len(all_data[0]), 2, [100, 100, 100])
+    accuracy, predictions = regressor.train(train_labels, train_data, test_labels, test_data,
+                                            epochs=num_epochs,
+                                            save_model=os.path.join(model_dir, "regress_test_model.pb"))
+    print(accuracy, calc_distance(test_labels, predictions))
+
+    
+
+
+    return
 
     # Run the algorithm
     accuracy, predictions = train_algorithm_v2(train_data, train_labels,
                                                test_data, test_labels,
-                                               filename)
+                                               filename,
+                                               model_dir)
     print(accuracy, predictions)
 
+#walks_test()
+v2_test()

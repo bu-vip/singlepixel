@@ -1,12 +1,15 @@
 package edu.bu.vip.singlepixel.demo;
 
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -103,13 +106,58 @@ public class TensorflowLocalizationAlgorithm implements LocalizationAlgorithm {
       pastReadings.get(key).add(reading);
 
       List<SinglePixelSensorReading> feature = new ArrayList<>();
-      for (String sensorKey : pastReadings.keySet()) {
+      List<String> sortedKeys = new ArrayList<>();
+      sortedKeys.addAll(pastReadings.keySet());
+      Collections.sort(sortedKeys);
+      for (String sensorKey : sortedKeys) {
         feature.addAll(pastReadings.get(sensorKey));
       }
 
+      if (feature.size() == 11) {
+        float[] featureArray = new float[11 * 4];
+        for (int i = 0; i < feature.size(); i++) {
+          SinglePixelSensorReading read = feature.get(i);
+          featureArray[i * 4 + 0] = (float)read.getRed();
+          featureArray[i * 4 + 1] = (float)read.getGreen();
+          featureArray[i * 4 + 2] = (float)read.getBlue();
+          featureArray[i * 4 + 3] = (float)read.getClear();
+        }
+
+        feed("input", featureArray, 1, featureArray.length);
+        run();
+
+        float[] position = new float[2];
+        fetch("output", position);
+
+        ImmutableMap.Builder<Long, List<Double>> builder = ImmutableMap.builder();
+        builder.put(1L, ImmutableList.of((double)position[0], (double)position[1]));
+        //System.out.println(position[0] + " " + position[1]);
+        listener.accept(builder.build());
+      }
 
     }
   }
+
+   public void feed(String inputName, float[] src, long... dims) {
+    addFeed(inputName, Tensor.create(dims, FloatBuffer.wrap(src)));
+  }
+
+  public void fetch(String outputName, float[] dst) {
+    fetch(outputName, FloatBuffer.wrap(dst));
+  }
+
+  public void fetch(String outputName, FloatBuffer dst) {
+    getTensor(outputName).writeTo(dst);
+  }
+
+   private void addFeed(String inputName, Tensor t) {
+    // The string format accepted by TensorFlowInferenceInterface is node_name[:output_index].
+    TensorId tid = TensorId.parse(inputName);
+    runner.feed(tid.name, tid.outputIndex, t);
+    feedNames.add(inputName);
+    feedTensors.add(t);
+  }
+
 
   private void run() {
 

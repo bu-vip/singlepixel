@@ -83,7 +83,7 @@ public class MatlabMqtt implements MqttCallback {
   }
 
   public Map<String, List<SinglePixelSensorReading>> getReadings() {
-    synchronized (pastReadings) {
+    synchronized (pastReadingsLock) {
       Map<String, List<SinglePixelSensorReading>> readings = new HashMap<>();
       for (String key : pastReadings.keySet()) {
         EvictingQueue<SinglePixelSensorReading> readingQueue = pastReadings.get(key);

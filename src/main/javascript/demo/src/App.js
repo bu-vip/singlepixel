@@ -24,7 +24,7 @@ class App extends Component {
                     });
                 }
             });
-        }, 10);
+        }, 100);
         this.state = {
             sensors: {
                 bounds: {
@@ -108,6 +108,9 @@ class App extends Component {
                 data={data}
                 options={options}
             />
+            <pre>
+                {JSON.stringify(this.state.sensors, null, 2)}
+            </pre>
         </div>);
     }
 }

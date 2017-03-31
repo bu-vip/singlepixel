@@ -1,8 +1,10 @@
 java_binary(
     name = "matlabmqtt",
     srcs = [
+        "Main.java",
         "MatlabMqtt.java",
     ],
+    main_class = "edu.bu.vip.singlepixel.matlab.Main",
     visibility = ["//visibility:public"],
     deps = [
         "//:com_google_guava_guava",
