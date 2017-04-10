@@ -10,7 +10,9 @@ import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -19,11 +21,12 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 
 /**
- * Adapted from:
- * https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/android/java/org/tensorflow/contrib/android/TensorFlowInferenceInterface.java
+ * Adapted from: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/android/java/org/tensorflow/contrib/android/TensorFlowInferenceInterface.java
  */
 public class TensorflowLocalizationAlgorithm implements LocalizationAlgorithm {
 
+  private final int NUM_SENSORS = 11;
+  private final int NUM_FEATURES_PER_SENSOR = 1;
   private final int windowSize = 1;
 
   private Consumer<ImmutableMap<Long, List<Double>>> listener;
@@ -105,40 +108,68 @@ public class TensorflowLocalizationAlgorithm implements LocalizationAlgorithm {
       }
       pastReadings.get(key).add(reading);
 
-      List<SinglePixelSensorReading> feature = new ArrayList<>();
-      List<String> sortedKeys = new ArrayList<>();
-      sortedKeys.addAll(pastReadings.keySet());
-      Collections.sort(sortedKeys);
-      for (String sensorKey : sortedKeys) {
-        feature.addAll(pastReadings.get(sensorKey));
-      }
-
-      if (feature.size() == 11) {
-        float[] featureArray = new float[11 * 4];
-        for (int i = 0; i < feature.size(); i++) {
-          SinglePixelSensorReading read = feature.get(i);
-          featureArray[i * 4 + 0] = (float)read.getRed();
-          featureArray[i * 4 + 1] = (float)read.getGreen();
-          featureArray[i * 4 + 2] = (float)read.getBlue();
-          featureArray[i * 4 + 3] = (float)read.getClear();
+      if (pastReadings.size() == NUM_SENSORS) {
+        List<SinglePixelSensorReading> feature = new ArrayList<>();
+        for (String sensorKey : pastReadings.keySet()) {
+          feature.addAll(pastReadings.get(sensorKey));
         }
 
-        feed("input", featureArray, 1, featureArray.length);
-        run();
-
-        float[] position = new float[2];
-        fetch("output", position);
-
+        float[] position = predictFromReadings(feature);
         ImmutableMap.Builder<Long, List<Double>> builder = ImmutableMap.builder();
-        builder.put(1L, ImmutableList.of((double)position[0], (double)position[1]));
-        //System.out.println(position[0] + " " + position[1]);
+        builder.put(1L, ImmutableList.of((double) position[0], (double) position[1]));
         listener.accept(builder.build());
       }
-
     }
   }
 
-   public void feed(String inputName, float[] src, long... dims) {
+  private float calcLuminance(SinglePixelSensorReading reading) {
+    double luminance = 0.2126f * reading.getRed() + 0.7152f * reading.getGreen() + 0.0722f * reading.getBlue();
+    return (float)luminance;
+  }
+
+  public float[] predictFromReadings(List<SinglePixelSensorReading> readings) {
+    if (readings.size() == NUM_SENSORS) {
+      // Separate readings by sensor
+      Map<String, SinglePixelSensorReading> readingsMap = new HashMap<>();
+      for (SinglePixelSensorReading reading : readings) {
+        String key = reading.getGroupId() + "/" + reading.getSensorId();
+        readingsMap.put(key, reading);
+      }
+
+      // Sort readings
+      List<SinglePixelSensorReading> feature = new ArrayList<>();
+      List<String> sortedKeys = new ArrayList<>();
+      sortedKeys.addAll(readingsMap.keySet());
+      Collections.sort(sortedKeys);
+      for (String sensorKey : sortedKeys) {
+        feature.add(readingsMap.get(sensorKey));
+      }
+
+      // Create feature vector
+      float[] featureArray = new float[NUM_SENSORS * NUM_FEATURES_PER_SENSOR];
+      for (int i = 0; i < feature.size(); i++) {
+        SinglePixelSensorReading read = feature.get(i);
+        featureArray[i * NUM_FEATURES_PER_SENSOR] = calcLuminance(read);
+        /*
+        featureArray[i * NUM_FEATURES_PER_SENSOR + 0] = (float) read.getRed();
+        featureArray[i * NUM_FEATURES_PER_SENSOR + 1] = (float) read.getGreen();
+        featureArray[i * NUM_FEATURES_PER_SENSOR + 2] = (float) read.getBlue();
+        featureArray[i * NUM_FEATURES_PER_SENSOR + 3] = (float) read.getClear();
+        */
+      }
+
+      feed("input", featureArray, 1, featureArray.length);
+      run();
+
+      float[] position = new float[2];
+      fetch("output", position);
+      return position;
+    }
+
+    throw new RuntimeException("Invalid feature length");
+  }
+
+  public void feed(String inputName, float[] src, long... dims) {
     addFeed(inputName, Tensor.create(dims, FloatBuffer.wrap(src)));
   }
 
@@ -150,7 +181,7 @@ public class TensorflowLocalizationAlgorithm implements LocalizationAlgorithm {
     getTensor(outputName).writeTo(dst);
   }
 
-   private void addFeed(String inputName, Tensor t) {
+  private void addFeed(String inputName, Tensor t) {
     // The string format accepted by TensorFlowInferenceInterface is node_name[:output_index].
     TensorId tid = TensorId.parse(inputName);
     runner.feed(tid.name, tid.outputIndex, t);
@@ -159,7 +190,7 @@ public class TensorflowLocalizationAlgorithm implements LocalizationAlgorithm {
   }
 
 
-  private void run() {
+  public void run() {
 
     String[] outputNames = {"output"};
 

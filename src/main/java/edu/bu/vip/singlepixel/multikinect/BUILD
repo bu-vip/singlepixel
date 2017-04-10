@@ -12,7 +12,9 @@ java_binary(
     ],
     deps = [
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller",
+        "@multikinect//src/main/java/edu/bu/vip/multikinect/controller/camera:framebus",
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller/webconsole",
+        "@multikinect//src/main/proto:frame",
         ":singlepixelsensorplugin",
         "//:com_google_guava_guava",
         "//:org_slf4j_slf4j_api",

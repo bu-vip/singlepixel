@@ -1,302 +1,193 @@
+import json
 import os
-import shutil
-from random import randint
 
 import matplotlib
 import numpy as np
-import tensorflow as tf
-from google.protobuf import text_format
 from numpy import genfromtxt
-from tensorflow.contrib.learn import DNNRegressor
-from tensorflow.core.framework import graph_pb2
-from tensorflow.python.framework import graph_util
 
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
-from read_session import combine_data, filter_by_number_skeletons, combined_to_features, get_bounds
+from read_session import combine_data, filter_by_number_skeletons, \
+  combined_to_features, get_bounds, save_as_csv
 
 from nn import Regressor
+from session_pb2 import Session
 
-
-def batch_of(data, labels, size):
-    batch_data = []
-    batch_labels = []
-    batch_elements = set()
-    for i in range(size):
-        # Choose a new random index
-        next_element = -1
-        while next_element is -1 or next_element in batch_elements:
-            next_element = randint(0, len(data) - 1)
-        # Add element to the batch
-        batch_data.append(data[next_element])
-        batch_labels.append(labels[next_element])
-        batch_elements.add(next_element)
-
-    return batch_data, batch_labels
-
-
-def column(matrix, i):
-    return [row[i] for row in matrix]
-
-
-def graph_results(data, real_labels, predicted_labels, window_size):
-    # Graph the results
-    num_features = int(len(data[0]) / window_size)
-    for i in range(num_features):
-        plt.subplot(num_features, 1, i + 1)
-        middle_feature = int(window_size / 2) * num_features
-        plt.plot(column(data, middle_feature + i), 'b')
-        plt.plot(real_labels, 'g')
-        plt.plot(predicted_labels, 'r')
-    plt.show()
-
-
-def train_algorithm(train_data, train_one_hot, test_data, test_one_hot,
-                    save_model=None):
-    feature_len = len(train_data[0])
-    num_classes = len(train_one_hot[0])
-
-    with tf.Graph().as_default():
-        # Create the model
-        x = tf.placeholder(tf.float32, [None, feature_len], name="input")
-        W = tf.Variable(tf.zeros([feature_len, num_classes]))
-        b = tf.Variable(tf.zeros([num_classes]))
-        # y = tf.matmul(x, W) + b
-        y = tf.nn.softmax(tf.matmul(x, W) + b, name="output")
-
-        # Define loss and optimizer
-        y_ = tf.placeholder(tf.float32, [None, num_classes])
-        cross_entropy = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=y_))
-        train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-
-        sess = tf.Session()
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        # Train
-        for _ in range(1000):
-            batch_data, batch_one_labels = batch_of(train_data, train_one_hot, 100)
-            sess.run(train_step, feed_dict={x: batch_data, y_: batch_one_labels})
-
-        # Test trained model
-        distance_squared = tf.reduce_sum(tf.square(y - y_), 1)
-        accuracy = tf.reduce_mean(tf.pow(distance_squared, 0.5))
-        test_accuracy = sess.run(accuracy,
-                                 feed_dict={x: test_data, y_: test_one_hot})
-
-        if save_model is not None:
-            print('Exporting trained model to', save_model)
-            output_graph_def = graph_util.convert_variables_to_constants(
-                sess, sess.graph.as_graph_def(), ["output"])
-            tf.train.write_graph(output_graph_def, '.', save_model, as_text=False)
-
-        # Get predictions and return
-        predictions = sess.run(y, feed_dict={x: test_data, y_: test_one_hot})
-        return test_accuracy, predictions
-
-def convert_model_text_to_binary(model_file, out_file):
-    graph_def = graph_pb2.GraphDef()
-    with open(model_file, "r") as f:
-        text_format.Merge(f.read(), graph_def)
-    tf.train.write_graph(graph_def, '.', out_file, as_text=False)
-
-def train_algorithm_v2(train_data, train_labels, test_data, test_labels, model_dir, save_model):
-    feature_len = len(train_data[0])
-    feature_columns = [tf.contrib.layers.real_valued_column("", dimension=feature_len)]
-
-    hidden_units = [100, 100, 100]
-    model_x_dir = model_dir + "_x"
-    shutil.rmtree(model_x_dir)
-    estimator_x = DNNRegressor(
-        feature_columns=feature_columns,
-        hidden_units=hidden_units,
-        model_dir=model_x_dir
-    )
-
-    model_y_dir = model_dir + "_y"
-    shutil.rmtree(model_y_dir)
-    estimator_y = DNNRegressor(
-        feature_columns=feature_columns,
-        hidden_units=hidden_units,
-        model_dir=model_y_dir
-    )
-
-    steps = 10000
-
-    def input_fn_train_x():
-        x = tf.constant(train_data)
-        y = tf.constant(train_labels[:, 0])
-        return x, y
-
-    estimator_x.fit(input_fn=input_fn_train_x, steps=steps)
-
-    def input_fn_train_y():
-        x = tf.constant(train_data)
-        y = tf.constant(train_labels[:, 1])
-        return x, y
-
-    estimator_y.fit(input_fn=input_fn_train_y, steps=steps)
-
-    def input_fn_eval_x():
-        x = tf.constant(test_data)
-        y = tf.constant(test_labels[:, 0])
-        return x, y
-
-    estimator_x.evaluate(input_fn=input_fn_eval_x, steps=1)
-
-    def input_fn_eval_y():
-        x = tf.constant(test_data)
-        y = tf.constant(test_labels[:, 1])
-        return x, y
-
-    estimator_y.evaluate(input_fn=input_fn_eval_y, steps=1)
-
-    predictions_x = estimator_x.predict(x=test_data)
-    predictions_y = estimator_y.predict(x=test_data)
-
-    sum = 0
-    i = 0
-    for pred_x, pred_y in zip(predictions_x, predictions_y):
-        predicted = [pred_x, pred_y]
-        actual = test_labels[i]
-        diff = actual - predicted
-        sq_dist = diff[0] * diff[0] + diff[1] * diff[1]
-        i += 1
-        sum += pow(sq_dist, 0.5)
-    distance = sum / i
-
-    x_graph_file = os.path.join(model_x_dir, "graph.pbtxt")
-    x_model = os.path.join(save_model, "model_x.pb")
-    convert_model_text_to_binary(x_graph_file, x_model)
-
-    y_graph_file = os.path.join(model_y_dir, "graph.pbtxt")
-    y_model = os.path.join(save_model, "model_y.pb")
-    convert_model_text_to_binary(y_graph_file, y_model)
-
-    return distance, zip(predictions_x, predictions_y)
-
-
-def train_algorithm_v3(train_data, train_labels, test_data, test_labels, model_dir, save_model):
-
-
-
-
-    pass
 
 def calc_distance(actual, predicted):
-    diff = np.absolute(actual - predicted)
-    squared = diff * diff
-    summed = np.sum(squared, axis=1)
-    sqrt = np.sqrt(summed)
-    distance = np.mean(sqrt)
-    distances = np.mean(diff, axis=0)
+  diff = np.absolute(actual - predicted)
+  squared = diff * diff
+  summed = np.sum(squared, axis=1)
+  sqrt = np.sqrt(summed)
+  distance = np.mean(sqrt)
+  distances = np.mean(diff, axis=0)
 
-    return distance, distances
+  return distance, distances, sqrt
+
 
 def walk_to_features(walk):
-    labels = walk[:, 0:2]
-    data = walk[:, 2:]
-    return labels, data
+  labels = walk[:, 0:2]
+  data = walk[:, 2:]
+  return labels, data
 
 
 def walks_to_feature(walks):
-    all_labels, all_data = walk_to_features(walks[0])
-    for walk in walks[1:]:
-        labels, data = walk_to_features(walk)
-        np.append(all_labels, labels, axis=0)
-        np.append(all_data, data, axis=0)
+  all_labels, all_data = walk_to_features(walks[0])
+  for walk in walks[1:]:
+    labels, data = walk_to_features(walk)
+    np.append(all_labels, labels, axis=0)
+    np.append(all_data, data, axis=0)
 
-    return all_labels, all_data
+  return all_labels, all_data
 
 
 def walks_test():
-    print("Walk test")
-    # Load data
-    root_dir = "../../resources/datav1/track5"
-    people = ['dan', 'doug', 'jiawei', 'pablo']
-    data = []
-    for person in people:
-        walks = []
-        for file in os.listdir(root_dir + "/" + person):
-            if file.endswith(".csv"):
-                full_path = root_dir + "/" + person + "/" + file
-                walk_data = genfromtxt(full_path, delimiter=',', skip_header=1)
-                walks.append(walk_data)
-        data.append(walks)
+  print("Walk test")
+  # Load data
+  root_dir = "../../resources/datav1/track5"
+  people = ['dan', 'doug', 'jiawei', 'pablo']
+  data = []
+  for person in people:
+    walks = []
+    for file in os.listdir(root_dir + "/" + person):
+      if file.endswith(".csv"):
+        full_path = root_dir + "/" + person + "/" + file
+        walk_data = genfromtxt(full_path, delimiter=',', skip_header=1)
+        walks.append(walk_data)
+    data.append(walks)
 
-    training_walks = data[0] + data[1]
-    testing_walks = data[2] + data[3]
+  training_walks = data[0] + data[1]
+  testing_walks = data[2] + data[3]
 
-    # Convert data to features
-    train_labels, train_data = walks_to_feature(training_walks)
-    test_labels, test_data = walks_to_feature(testing_walks)
+  # Convert data to features
+  train_labels, train_data = walks_to_feature(training_walks)
+  test_labels, test_data = walks_to_feature(testing_walks)
 
-    regressor = Regressor(len(train_data[0]), 1, [])
-    regressor.train(train_labels[:, [0]], train_data, test_labels[:, [0]], test_data)
+  regressor = Regressor(len(train_data[0]), len(train_labels[0]),
+                        [100, 100, 100])
+  accuracy, predictions = regressor.train(train_labels, train_data, test_labels,
+                                          test_data)
 
-    # Run the algorithm
-    accuracy, predictions = train_algorithm(train_data, train_labels,
-                                               test_data, test_labels,
-                                               None)
-    print(accuracy)
+  print(accuracy)
+
+
+def graph_point_distribution(labels, save_file=None):
+  # Plot point distribution
+  dist_figure = plt.figure()
+  plt.ylabel("Y (m)")
+  plt.xlabel("X (m)")
+  plt.scatter(labels[:, 0], labels[:, 1])
+  if save_file is not None:
+    dist_figure.savefig(save_file)
+  else:
+    plt.show()
 
 
 def v2_test():
-    print("V2 test")
+  print("V2 test")
 
-    root_dir = "../../resources/datav2/882188772/"
-    recordings = [
-        '316715123336182773'
-    ]
+  name = "test4"
 
-    # Load and combine data
-    recording_dir = os.path.join(root_dir, recordings[0])
-    combined = combine_data(recording_dir)
-    clipped = filter_by_number_skeletons(combined)
+  root_dir = "../../resources/datav2/397269922/"
+  session_file = "397269922.session"
+  session = Session()
+  with open(os.path.join(root_dir, session_file), 'rb') as f:
+    buffer = f.read()
+    session.ParseFromString(buffer)
 
-    # Combine all clips with 1 person into giant matrices
-    single_person_clips = clipped[1]
-    all_labels, all_data = combined_to_features(single_person_clips[0])
-    for clip in single_person_clips[1:]:
-        labels, data = combined_to_features(clip)
-        all_labels = np.concatenate([all_labels, labels])
-        all_data = np.concatenate([all_data, data])
+  recording_blacklist = [
+    "center_reference",
+    # "random_facing_com",
+    # "random_facing_jack",
+    # "random_jack",
+    # "random_blue",
+    "boundary",
+  ]
 
-    # Tensorflow works on float32s
-    all_labels = all_labels.astype(np.float32)
-    all_data = all_data.astype(np.float32)
+  # Load and combine data
+  combined = []
+  for recording in session.recordings:
+    if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
+      print("Loading recording {} {}".format(recording.name, recording.id))
+      recording_dir = os.path.join(root_dir, str(recording.id))
+      combined += combine_data(recording_dir)
+    else:
+      print("Skipped recording {} {}".format(recording.name, recording.id))
 
-    print("Bounds: ", get_bounds(all_labels))
+  print("Filtering by number of occupants...")
+  clipped = filter_by_number_skeletons(combined)
 
-    # Split data in half
-    data_middle = int(len(all_data) / 2)
-    train_data = all_data[:data_middle]
-    test_data = all_data[data_middle:]
-    label_middle = int(len(all_labels) / 2)
-    train_labels = all_labels[:label_middle]
-    test_labels = all_labels[label_middle:]
-    filename = "./models/model_v2"
-    model_dir = "./models/"
+  print("Forming data matrices...")
+  # Combine all clips with 1 person into giant matrices
+  single_person_clips = clipped[1]
+  all_labels, all_data = combined_to_features(single_person_clips[0])
+  for clip in single_person_clips[1:]:
+    labels, data = combined_to_features(clip)
+    all_labels = np.concatenate([all_labels, labels])
+    all_data = np.concatenate([all_data, data])
 
-    num_epochs = 10000
+  # Tensorflow works on float32s
+  all_labels = all_labels.astype(np.float32)
+  all_data = all_data.astype(np.float32)
 
-    regressor = Regressor(len(all_data[0]), 2, [100, 100, 100])
-    accuracy, predictions = regressor.train(train_labels, train_data, test_labels, test_data,
-                                            epochs=num_epochs,
-                                            save_model=os.path.join(model_dir, "regress_test_model.pb"))
-    print(accuracy, calc_distance(test_labels, predictions))
+  print("Data points count: ", len(all_labels))
 
-    
+  print("Bounds: ", get_bounds(all_labels))
+
+  # Split data in half
+  data_middle = int(len(all_data) / 2)
+  train_data = all_data[:data_middle]
+  test_data = all_data[data_middle:]
+  label_middle = int(len(all_labels) / 2)
+  train_labels = all_labels[:label_middle]
+  test_labels = all_labels[label_middle:]
+
+  hidden_layers = [100, 100, 100]
+  num_epochs = 5000
+  model_dir = "./models/"
+  save_model_file = os.path.join(model_dir, name + "_model.pb")
+
+  regressor = Regressor(len(all_data[0]), len(all_labels[0]), hidden_layers)
+
+  print("Training model...")
+  accuracy, predictions = regressor.train(train_labels, train_data, test_labels,
+                                          test_data,
+                                          epochs=num_epochs,
+                                          save_model=save_model_file)
+  distance, distances, indv_distances = calc_distance(test_labels, predictions)
+  print(accuracy, distances)
+
+  stats_file = os.path.join(model_dir, name + "_stats.txt")
+  with open(stats_file, 'w') as file:
+    stats = {
+      'accuracy': str(accuracy),
+      'distance': str(distance),
+      'distances': str(distances),
+    }
+    file.write(json.dumps(stats))
+
+  # Plot errors
+  error_fig = plt.figure()
+  plt.subplot(3, 1, 1)
+  plt.plot(test_labels[:, 0], 'b')
+  plt.plot(predictions[:, 0], 'g')
+  plt.ylabel("X (m)")
+
+  plt.subplot(3, 1, 2)
+  plt.plot(test_labels[:, 1], 'b')
+  plt.plot(predictions[:, 1], 'g')
+  plt.ylabel("Y (m)")
+
+  plt.subplot(3, 1, 3)
+  plt.plot(indv_distances, 'g')
+  plt.ylabel("Distance Error (m)")
+
+  error_graph = os.path.join(model_dir, name + "_graph_error.svg")
+  error_fig.savefig(error_graph)
+
+  # Plot point distribution
+  distrib_graph = os.path.join(model_dir, name + "_graph_point_distrib.svg")
+  graph_point_distribution(all_labels, save_file=distrib_graph)
 
 
-    return
-
-    # Run the algorithm
-    accuracy, predictions = train_algorithm_v2(train_data, train_labels,
-                                               test_data, test_labels,
-                                               filename,
-                                               model_dir)
-    print(accuracy, predictions)
-
-#walks_test()
 v2_test()

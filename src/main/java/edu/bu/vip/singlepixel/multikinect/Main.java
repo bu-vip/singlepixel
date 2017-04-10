@@ -1,6 +1,10 @@
 package edu.bu.vip.singlepixel.multikinect;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import edu.bu.vip.multikinect.Protos.Frame;
 import edu.bu.vip.multikinect.controller.Controller;
+import edu.bu.vip.multikinect.controller.camera.FrameReceivedEvent;
 import edu.bu.vip.multikinect.controller.webconsole.WebConsole;
 import java.util.Scanner;
 

@@ -24,7 +24,7 @@ class App extends Component {
                     });
                 }
             });
-        }, 100);
+        }, 10);
         this.state = {
             sensors: {
                 bounds: {
