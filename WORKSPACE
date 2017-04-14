@@ -31,7 +31,7 @@ maven_jar(name = "com_fasterxml_jackson_datatype_jackson_datatype_jsr310", artif
 maven_jar(name = "org_hamcrest_java_hamcrest", artifact = "org.hamcrest:java-hamcrest:jar:2.0.0.0")
 maven_jar(name = "org_javassist_javassist", artifact = "org.javassist:javassist:jar:3.19.0-GA")
 maven_jar(name = "javax_inject_javax_inject", artifact = "javax.inject:javax.inject:jar:1")
-maven_jar(name = "com_beust_jcommander", artifact = "com.beust:jcommander:jar:1.48")
+maven_jar(name = "com_beust_jcommander", artifact = "com.beust:jcommander:jar:1.64")
 maven_jar(name = "org_jgrapht_jgrapht_core", artifact = "org.jgrapht:jgrapht-core:jar:1.0.1")
 maven_jar(name = "junit_junit", artifact = "junit:junit:jar:4.12")
 maven_jar(name = "log4j_log4j", artifact = "log4j:log4j:jar:1.2.17")
@@ -64,15 +64,10 @@ maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "
 
 # singlepixellocalization dependencies end
 
-#git_repository(
-#    name = "multikinect",
-#    remote = "https://github.com/bu-vip/multikinect.git",
-#    commit = "d34cea6dab3a23ae8a769383f1a3f387ef89bf06"
-#)
-
-local_repository(
+git_repository(
     name = "multikinect",
-    path = "/home/doug/Development/bu_code/research/multikinect",
+    remote = "https://github.com/bu-vip/multikinect.git",
+    commit = "00146ef81e7c87673bc0758d8f188da45ce79594"
 )
 
 # proto build rules

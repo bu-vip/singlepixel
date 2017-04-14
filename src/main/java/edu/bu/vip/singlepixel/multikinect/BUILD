@@ -2,6 +2,7 @@ java_binary(
     name = "main",
     srcs = [
         "Main.java",
+        "MainArgs.java",
     ],
     main_class = "edu.bu.vip.singlepixel.multikinect.Main",
     resources = [
@@ -14,6 +15,7 @@ java_binary(
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller",
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller/webconsole",
         ":singlepixelsensorplugin",
+        "//:com_beust_jcommander",
         "//:org_slf4j_slf4j_api",
         "//:org_slf4j_slf4j_log4j12",
     ],
