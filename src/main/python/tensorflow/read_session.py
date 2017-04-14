@@ -70,32 +70,39 @@ def ntp_time_less_than(time_a, time_b):
 
 
 def find_sp_readings_for_time(ntp_time, sp_all_readings, sp_indexes):
-  sp_readings = {}
-  for sp_id in sp_all_readings:
-    readings = sp_all_readings[sp_id]
+  current_readings = {}
+  reading_groups = []
+  finished = False
+  changed = True
+  while changed is True and finished is False:
+    changed = False
+    for sp_id in sp_all_readings:
+      readings = sp_all_readings[sp_id]
+      current_reading = readings[sp_indexes[sp_id]]
 
-    # Check if time is before reading
-    if ntp_compare(readings[sp_indexes[sp_id]].ntp_capture_time, ntp_time) == 1:
-      return None
+      # Check if time is before reading
+      if ntp_compare(current_reading.ntp_capture_time, ntp_time) == 1:
+        finished = True
+        break
 
-    # No more readings, at end
-    if sp_indexes[sp_id] == len(readings) - 1:
-      return None
-
-    # Search for the reading that is closest to before the time
-    while ntp_time_less_than(readings[sp_indexes[sp_id] + 1].ntp_capture_time,
-                             ntp_time):
-      sp_indexes[sp_id] += 1
+      # No more readings, at end
       if sp_indexes[sp_id] == len(readings) - 1:
-        # No more readings, at end
-        return None
-    sp_readings[sp_id] = readings[sp_indexes[sp_id]]
+        continue
+      else:
+        if sp_id in current_readings:
+          # Check if next reading is before the desired time
+          sp_indexes[sp_id] += 1
 
-  # Only return mappings with all sensors
-  if len(sp_readings) != len(sp_all_readings):
-    return None
+        # Update current reading
+        current_readings[sp_id] = current_reading
+        # Only return mappings with all sensors
+        if len(current_readings) == len(sp_all_readings):
+          reading_groups.append(current_readings.copy())
 
-  return sp_readings
+        # A sensor reading was updated
+        changed = True
+
+  return reading_groups
 
 
 def read_raw_camera_data(recording_dir):
@@ -131,12 +138,24 @@ def calculate_average_ntp_time_for_frames(raw_frames):
   return raw_frames['camera1'].ntp_capture_time
 
 
+def calculate_ntp_time_of_frame(synced_frame, camera_readings, camera_indexes):
+  # Get the relevant raw frames
+  raw_frames = find_raw_frames_for_synced_frame(synced_frame,
+                                                camera_readings,
+                                                camera_indexes)
+  # Calculate the NTP time for the synced frame
+  synced_ntp_time = calculate_average_ntp_time_for_frames(raw_frames)
+  return synced_ntp_time
+
+
 def combine_data(recording_dir):
   # Read the sensor readings
   sp_file = os.path.join(recording_dir, "plugins", "singlepixel.pbdat")
   sp_all_readings = read_delimited_protos_file(
-    singlepixel_pb2.SinglePixelSensorReading, sp_file)
-  sp_readings = sp_separate_readings_by_sensor(sp_all_readings)
+      singlepixel_pb2.SinglePixelSensorReading, sp_file)
+  # sp_readings = sp_separate_readings_by_sensor(sp_all_readings)
+  # TODO(doug) - Don't hardcode!
+  num_sensors = 11
 
   # Read all of the raw camera frames
   camera_readings = read_raw_camera_data(recording_dir)
@@ -150,26 +169,45 @@ def combine_data(recording_dir):
   for camera_id in camera_readings:
     camera_indexes[camera_id] = 0
 
-  sp_indexes = {}
-  for sensor_id in sp_readings:
-    sp_indexes[sensor_id] = 0
+  synced_frame = synced_frames[0]
+  synced_next_frame_index = 1
+  synced_next_ntp_time = calculate_ntp_time_of_frame(synced_frames[synced_next_frame_index],
+                                                camera_readings,
+                                                camera_indexes)
 
-  # Link frames and sp data
+  # Iterate over sensor readings
   combined = []
-  for synced_frame in synced_frames:
-    # Get the relevant raw frames
-    raw_frames = find_raw_frames_for_synced_frame(synced_frame, camera_readings,
-                                                  camera_indexes)
-    # Calculate the NTP time for the synced frame
-    synced_time = calculate_average_ntp_time_for_frames(raw_frames)
-    # Get the SP readings for the frame
-    sp_data = find_sp_readings_for_time(synced_time, sp_readings, sp_indexes)
+  current_readings = {}
+  done = False
+  for reading in sp_all_readings:
+    sp_id = sp_reading_key(reading)
 
-    # Create new combined point if sp data was found
-    if sp_data is not None:
+    # Check if reading comes after frame
+    if ntp_compare(synced_next_ntp_time, reading.ntp_capture_time) != 1:
+      # Iterate through frames until reading comes after frame
+      while ntp_compare(synced_next_ntp_time, reading.ntp_capture_time) != 1:
+        # Check for end of synced frames
+        if synced_next_frame_index == len(synced_frames) - 1:
+          done = True
+          break
+
+        synced_frame = synced_frames[synced_next_frame_index]
+        synced_next_frame_index += 1
+        synced_next_ntp_time = calculate_ntp_time_of_frame(synced_frames[synced_next_frame_index],
+                                                      camera_readings,
+                                                      camera_indexes)
+
+    if done:
+      break
+
+    # Update readings buffer
+    current_readings[sp_id] = reading
+    # Check that current_readings has all sensors
+    if len(current_readings) == num_sensors:
+      # Create new data point
       new_point = {
         'synced': synced_frame,
-        'sp': sp_data,
+        'sp': current_readings.copy(),
       }
       combined.append(new_point)
 
@@ -207,7 +245,7 @@ def calculate_average_position(combined_skeleton):
 def reading_to_feature(reading):
   luminance = 0.2126 * reading.red + 0.7152 * reading.green + 0.0722 * reading.blue
   return np.array([luminance])
-  #return np.array([reading.red, reading.green, reading.blue, reading.clear])
+  # return np.array([reading.red, reading.green, reading.blue, reading.clear])
 
 
 def readings_dict_to_features(dict):

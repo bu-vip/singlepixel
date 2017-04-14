@@ -8,6 +8,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class Main implements MqttCallback {
   private MqttClient client;
   private final Object occupantMapLock = new Object();
   private ImmutableMap<Long, List<Double>> occupantMap;
+  private FileOutputStream stream;
 
   public void start() throws Exception {
 
@@ -61,6 +63,8 @@ public class Main implements MqttCallback {
         occupantMap = newMap;
       }
     });
+
+    stream = new FileOutputStream("/home/doug/Desktop/test2.pbdat");
 
 
 
@@ -215,6 +219,10 @@ public class Main implements MqttCallback {
       }
 
       algorithm.receivedReading(reading);
+
+      reading.writeDelimitedTo(stream);
+
+
     } catch (InvalidProtocolBufferException ex) {
       // TODO(doug) - Log exception
     }
@@ -238,5 +246,7 @@ public class Main implements MqttCallback {
     if (client.isConnected()) {
       client.disconnect();
     }
+
+    stream.close();
   }
 }

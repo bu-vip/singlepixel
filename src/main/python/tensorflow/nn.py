@@ -78,14 +78,23 @@ class Regressor():
             for epoch in range(0, epochs):
                 label_batches, data_batches = self._create_batches(train_labels, train_data, batch_size)
                 avg_cost = 0
+                avg_acc = 0
                 for batch_i in range(0, len(label_batches)):
-                    _, cost = sess.run([self.optimizer, self.cost], feed_dict={
+                    _, cost, acc = sess.run([self.optimizer,
+                                             self.cost,
+                                             self.accuracy],
+                                            feed_dict={
                         self.input: data_batches[batch_i],
                         self.labels: label_batches[batch_i]})
                     avg_cost += cost / len(label_batches)
+                    avg_acc += acc / len(label_batches)
 
                 if epoch % 100 == 0:
-                    print(epoch, avg_cost)
+                    print(epoch, avg_cost, acc)
+
+                if save_model is not None and epoch % 1000 == 0:
+                  output_graph_def = tf.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), ["output"])
+                  tf.train.write_graph(output_graph_def, '.', save_model + "_checkpoint" + str(epoch) + ".pbdat", as_text=False)
 
             test_accuracy, test_predictions = sess.run([self.accuracy, self.output_layer], feed_dict={
                 self.input: test_data,

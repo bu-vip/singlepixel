@@ -73,7 +73,7 @@ def walks_test():
 
 def graph_point_distribution(labels, save_file=None):
   # Plot point distribution
-  dist_figure = plt.figure()
+  dist_figure = plt.figure(num=None, figsize=(16, 9), dpi=300)
   plt.ylabel("Y (m)")
   plt.xlabel("X (m)")
   plt.scatter(labels[:, 0], labels[:, 1])
@@ -82,37 +82,44 @@ def graph_point_distribution(labels, save_file=None):
   else:
     plt.show()
 
+def unison_shuffled_copies(a, b):
+  assert len(a) == len(b)
+  p = np.random.permutation(len(a))
+  return a[p], b[p]
+
 
 def v2_test():
   print("V2 test")
 
-  name = "test4"
+  name = "corn_test"
 
-  root_dir = "../../resources/datav2/397269922/"
-  session_file = "397269922.session"
-  session = Session()
-  with open(os.path.join(root_dir, session_file), 'rb') as f:
-    buffer = f.read()
-    session.ParseFromString(buffer)
-
-  recording_blacklist = [
-    "center_reference",
-    # "random_facing_com",
-    # "random_facing_jack",
-    # "random_jack",
-    # "random_blue",
-    "boundary",
+  session_dir = "../../resources/datav2/"
+  session_ids = [
+    "1597641000", # corn4
+    "397269922", # corn3
+    "497042981", # corn2
   ]
 
-  # Load and combine data
+  recording_blacklist = [
+  ]
+
   combined = []
-  for recording in session.recordings:
-    if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
-      print("Loading recording {} {}".format(recording.name, recording.id))
-      recording_dir = os.path.join(root_dir, str(recording.id))
-      combined += combine_data(recording_dir)
-    else:
-      print("Skipped recording {} {}".format(recording.name, recording.id))
+  for session_id in session_ids:
+    root_dir = os.path.join(session_dir, str(session_id))
+    session_file = str(session_id) + ".session"
+    session = Session()
+    with open(os.path.join(root_dir, session_file), 'rb') as f:
+      buffer = f.read()
+      session.ParseFromString(buffer)
+
+    # Load and combine data
+    for recording in session.recordings:
+      if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
+        print("Loading {} {} {}".format(session.id, recording.name, recording.id))
+        recording_dir = os.path.join(root_dir, str(recording.id))
+        combined += combine_data(recording_dir)
+      else:
+        print("Skipped recording {} {} {}".format(session.id, recording.name, recording.id))
 
   print("Filtering by number of occupants...")
   clipped = filter_by_number_skeletons(combined)
@@ -130,17 +137,19 @@ def v2_test():
   all_labels = all_labels.astype(np.float32)
   all_data = all_data.astype(np.float32)
 
+  # Shuffle
+  all_labels, all_data = unison_shuffled_copies(all_labels, all_data)
+
   print("Data points count: ", len(all_labels))
 
   print("Bounds: ", get_bounds(all_labels))
 
   # Split data in half
-  data_middle = int(len(all_data) / 2)
-  train_data = all_data[:data_middle]
-  test_data = all_data[data_middle:]
-  label_middle = int(len(all_labels) / 2)
-  train_labels = all_labels[:label_middle]
-  test_labels = all_labels[label_middle:]
+  middle = int(len(all_data) / 2)
+  train_data = all_data[:middle]
+  test_data = all_data[middle:]
+  train_labels = all_labels[:middle]
+  test_labels = all_labels[middle:]
 
   hidden_layers = [100, 100, 100]
   num_epochs = 5000
@@ -167,7 +176,7 @@ def v2_test():
     file.write(json.dumps(stats))
 
   # Plot errors
-  error_fig = plt.figure()
+  error_fig = plt.figure(num=None, figsize=(16, 9), dpi=300)
   plt.subplot(3, 1, 1)
   plt.plot(test_labels[:, 0], 'b')
   plt.plot(predictions[:, 0], 'g')
@@ -182,11 +191,11 @@ def v2_test():
   plt.plot(indv_distances, 'g')
   plt.ylabel("Distance Error (m)")
 
-  error_graph = os.path.join(model_dir, name + "_graph_error.svg")
+  error_graph = os.path.join(model_dir, name + "_graph_error.png")
   error_fig.savefig(error_graph)
 
   # Plot point distribution
-  distrib_graph = os.path.join(model_dir, name + "_graph_point_distrib.svg")
+  distrib_graph = os.path.join(model_dir, name + "_graph_point_distrib.png")
   graph_point_distribution(all_labels, save_file=distrib_graph)
 
 
