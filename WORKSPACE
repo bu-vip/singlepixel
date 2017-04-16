@@ -68,7 +68,7 @@ maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "
 git_repository(
     name = "multikinect",
     remote = "https://github.com/bu-vip/multikinect.git",
-    commit = "3d474b7fb5e3beaa5cc5a53b0ddfbf0851c29699"
+    commit = "09b99999b6d2bf1727505014b44aaa3583f489a8"
 )
 
 http_jar(
