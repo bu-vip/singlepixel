@@ -158,6 +158,14 @@ java_library(
     ],
 )
 
+java_library(
+    name = "zip4j",
+    visibility = ["//visibility:public"],
+    exports = [
+        "@net_lingala_zip4j_zip4j//jar",
+    ],
+)
+
 # singlepixellocalization
 
 java_library(

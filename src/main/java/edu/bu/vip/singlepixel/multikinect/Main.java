@@ -20,7 +20,7 @@ public class Main {
     } else {
       // Run
       Controller controller = new Controller(mainArgs.getDataDirectory());
-      WebConsole webConsole = new WebConsole(controller);
+      WebConsole webConsole = new WebConsole(controller, mainArgs.getDataDirectory());
 
       SinglePixelSensorPlugin sensorPlugin = new SinglePixelSensorPlugin(
           mainArgs.getMqttTopicPrefix(), mainArgs.getMqttHost());
