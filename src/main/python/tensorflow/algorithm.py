@@ -91,7 +91,7 @@ def unison_shuffled_copies(a, b):
 def v2_test():
   print("V2 test")
 
-  name = "corn_test"
+  name = "running_mean"
 
   session_dir = "../../resources/datav2/"
   session_ids = [
@@ -130,8 +130,9 @@ def v2_test():
   all_labels, all_data = combined_to_features(single_person_clips[0])
   for clip in single_person_clips[1:]:
     labels, data = combined_to_features(clip)
-    all_labels = np.concatenate([all_labels, labels])
-    all_data = np.concatenate([all_data, data])
+    if len(labels) > 0:
+      all_labels = np.concatenate([all_labels, labels])
+      all_data = np.concatenate([all_data, data])
 
   # Tensorflow works on float32s
   all_labels = all_labels.astype(np.float32)
@@ -152,7 +153,7 @@ def v2_test():
   test_labels = all_labels[middle:]
 
   hidden_layers = [100, 100, 100]
-  num_epochs = 5000
+  num_epochs = 10000
   model_dir = "./models/"
   save_model_file = os.path.join(model_dir, name + "_model.pb")
 
@@ -172,6 +173,8 @@ def v2_test():
       'accuracy': str(accuracy),
       'distance': str(distance),
       'distances': str(distances),
+      'num_points': str(len(all_labels)),
+      'bounds': str(get_bounds(all_labels))
     }
     file.write(json.dumps(stats))
 

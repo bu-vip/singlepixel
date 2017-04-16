@@ -268,13 +268,25 @@ def combined_to_feature(combined):
   return np.array(labels), features
 
 
-def combined_to_features(combined):
+def combined_to_features(combined, average_size=5000):
   all_labels = []
   all_features = []
+  previous_features = []
   for data in combined:
     labels, features = combined_to_feature(data)
-    all_labels.append(labels)
-    all_features.append(features)
+    # Add the current reading to the buffer
+    previous_features.append(features)
+    # Remove old element to maintain length
+    while len(previous_features) > average_size:
+      previous_features.pop(0)
+
+    # If buffer is full, calculate final feature
+    if len(previous_features) == average_size:
+      all_labels.append(labels)
+      buffer_mean = np.mean(np.array(previous_features), axis=0)
+      buffer_std = np.std(np.array(previous_features), axis=0)
+      final_feature = (features - buffer_mean) / buffer_std
+      all_features.append(final_feature)
 
   return np.array(all_labels), np.array(all_features)
 
