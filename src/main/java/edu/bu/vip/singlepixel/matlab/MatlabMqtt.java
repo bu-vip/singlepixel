@@ -1,7 +1,8 @@
 package edu.bu.vip.singlepixel.matlab;
 
 import com.google.common.collect.EvictingQueue;
-import edu.bu.vip.singlepixel.Grpc.SinglePixelSensorReading;
+import com.google.protobuf.InvalidProtocolBufferException;
+import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,7 @@ public class MatlabMqtt implements MqttCallback {
   private final int numReadings;
   private MqttClient client;
 
-  private Object pastReadingsLock = new Object();
+  private final Object pastReadingsLock = new Object();
   private Map<String, EvictingQueue<SinglePixelSensorReading>> pastReadings = new HashMap<>();
 
   public MatlabMqtt(String topicPrefix, String hostname, int numReadings) {
@@ -50,53 +51,30 @@ public class MatlabMqtt implements MqttCallback {
   }
 
   public void messageArrived(String aTopic, MqttMessage message) throws Exception {
-    String payload = new String(message.getPayload());
     // Remove prefix
     String topic = aTopic.substring(this.topicPrefix.length());
     String[] levels = topic.split("/");
 
     // Basic topic checking
     if (levels.length == 5 && levels[1].equals("group") && levels[3].equals("sensor")) {
-      // Get sensor info from topic structure: <prefix>/group/<id>/sensor/<id>
-      String groupId = levels[2];
-      String sensorId = levels[4];
-
-      // More checking
-      String[] readings = (payload).split(",");
-      if (readings.length != 6) {
-        // Log invalid sensor reading
-        // TODO(doug)
-      } else {
-        try {
-          double red = Double.parseDouble(readings[0].trim());
-          double green = Double.parseDouble(readings[1].trim());
-          double blue = Double.parseDouble(readings[2].trim());
-          double white = Double.parseDouble(readings[3].trim());
-          int time1 = Integer.parseInt(readings[4].trim());
-          int time2 = Integer.parseInt(readings[5].trim());
-
-          SinglePixelSensorReading.Builder builder = SinglePixelSensorReading.newBuilder();
-          builder.setGroupId(groupId);
-          builder.setSensorId(sensorId);
-          builder.setRed(red);
-          builder.setGreen(green);
-          builder.setBlue(blue);
-          builder.setWhite(white);
-
-          // TODO(doug) - time
-
-          synchronized (pastReadingsLock) {
-            String key = groupId + "/" + sensorId;
-            if (!pastReadings.containsKey(key)) {
-              EvictingQueue<SinglePixelSensorReading> newQueue = EvictingQueue.create(numReadings);
-              pastReadings.put(key, newQueue);
-            }
-            pastReadings.get(key).add(builder.build());
+      try {
+        // Recover protobuf from payload
+        SinglePixelSensorReading reading = SinglePixelSensorReading.parseFrom(message.getPayload());
+        // Store in past readings buffer
+        synchronized (pastReadingsLock) {
+          String key = reading.getGroupId() + "/" + reading.getSensorId();
+          // Create a queue if there isn't one already
+          if (!pastReadings.containsKey(key)) {
+            EvictingQueue<SinglePixelSensorReading> newQueue = EvictingQueue.create(numReadings);
+            pastReadings.put(key, newQueue);
           }
-        } catch (NumberFormatException e) {
+          pastReadings.get(key).add(reading);
         }
+      } catch (InvalidProtocolBufferException ex) {
+        // TODO(doug) - Log exception
       }
     } else {
+      // TODO(doug) - Log invalid topic
     }
   }
 
@@ -105,7 +83,7 @@ public class MatlabMqtt implements MqttCallback {
   }
 
   public Map<String, List<SinglePixelSensorReading>> getReadings() {
-    synchronized (pastReadings) {
+    synchronized (pastReadingsLock) {
       Map<String, List<SinglePixelSensorReading>> readings = new HashMap<>();
       for (String key : pastReadings.keySet()) {
         EvictingQueue<SinglePixelSensorReading> readingQueue = pastReadings.get(key);

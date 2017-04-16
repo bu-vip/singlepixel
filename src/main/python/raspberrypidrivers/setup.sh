@@ -11,3 +11,4 @@ apt-get install python-pip
 
 # insall the mqtt client
 pip install paho-mqtt
+pip install protobuf
