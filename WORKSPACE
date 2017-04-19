@@ -65,10 +65,15 @@ maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "
 
 # singlepixellocalization dependencies end
 
-git_repository(
+#git_repository(
+#    name = "multikinect",
+#    remote = "https://github.com/bu-vip/multikinect.git",
+#    commit = "b4ec4483812d1fa9d6b806f3d249268f8479c4c5"
+#)
+
+local_repository(
     name = "multikinect",
-    remote = "https://github.com/bu-vip/multikinect.git",
-    commit = "09b99999b6d2bf1727505014b44aaa3583f489a8"
+    path = "/home/doug/Development/bu_code/research/multikinect"
 )
 
 http_jar(
@@ -83,21 +88,21 @@ new_http_archive(
     build_file = "thirdparty/BUILD.tensorflow_java_api_jni",
 )
 
-
 git_repository(
   name = "com_google_protobuf",
   remote = "https://github.com/google/protobuf",
   tag = "v3.2.0",
 )
 
-
-
-
 # proto build rules
-git_repository(
+#git_repository(
+#  name = "org_pubref_rules_protobuf",
+#  remote = "https://github.com/pubref/rules_protobuf",
+#  tag = "v0.7.1",
+#)
+local_repository(
   name = "org_pubref_rules_protobuf",
-  remote = "https://github.com/pubref/rules_protobuf",
-  tag = "v0.7.1",
+  path = "/home/doug/Development/thirdparty/rules_protobuf"
 )
 
 # Load Java protobuf rules
@@ -117,3 +122,7 @@ java_proto_repositories(
     "com_google_protobuf_protobuf_java_util",
     "com_google_code_gson_gson",
 ])
+
+# Load Python protobuf rules
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
+py_proto_repositories()

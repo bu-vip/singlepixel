@@ -1,8 +1,11 @@
 import matplotlib
 import numpy as np
-import singlepixel_pb2
+
+from src.main.python.tensorflow.feature import readings_dict_to_features
+from src.main.python.tensorflow.graphing import colorline
+from srcgen.singlepixel_pb2 import SinglePixelSensorReading
 import tensorflow as tf
-from read_session import read_delimited_protos_file, readings_dict_to_features, \
+from src.main.python.tensorflow.read_session import read_delimited_protos_file, \
   sp_reading_key
 from tensorflow.python.platform import gfile
 
@@ -11,50 +14,7 @@ import matplotlib.pyplot as plt
 
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.collections as mcoll
 
-def colorline(
-    x, y, z=None, cmap='copper', norm=plt.Normalize(0.0, 1.0),
-    linewidth=3, alpha=1.0):
-  """
-  http://nbviewer.ipython.org/github/dpsanders/matplotlib-examples/blob/master/colorline.ipynb
-  http://matplotlib.org/examples/pylab_examples/multicolored_line.html
-  Plot a colored line with coordinates x and y
-  Optionally specify colors in the array z
-  Optionally specify a colormap, a norm function and a line width
-  """
-
-  # Default colors equally spaced on [0,1]:
-  if z is None:
-    z = np.linspace(0.0, 1.0, len(x))
-
-  # Special case if a single number:
-  # to check for numerical input -- this is a hack
-  if not hasattr(z, "__iter__"):
-    z = np.array([z])
-
-  z = np.asarray(z)
-
-  segments = make_segments(x, y)
-  lc = mcoll.LineCollection(segments, array=z, cmap=cmap, norm=norm,
-                            linewidth=linewidth, alpha=alpha)
-
-  ax = plt.gca()
-  ax.add_collection(lc)
-
-  return lc
-
-def make_segments(x, y):
-  """
-  Create list of line segments from x and y coordinates, in the correct format
-  for LineCollection: an array of the form numlines x (points per line) x 2 (x
-  and y) array
-  """
-
-  points = np.array([x, y]).T.reshape(-1, 1, 2)
-  segments = np.concatenate([points[:-1], points[1:]], axis=1)
-  return segments
 
 data_files = [
   #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/269008718817948824/plugins/singlepixel.pbdat",
@@ -67,15 +27,13 @@ data_files = [
 
 for data_file in data_files:
   print(data_file)
-  #model_file = "models/test5_model.pb"
   model_file = "models/running_mean_model.pb_checkpoint5000.pbdat"
   min_x = -1.18
   max_x = 1.11
   min_y = 1.19
   max_y = 3.34
 
-  readings = read_delimited_protos_file(
-    singlepixel_pb2.SinglePixelSensorReading, data_file)
+  readings = read_delimited_protos_file(SinglePixelSensorReading, data_file)
   num_sensors = 11
   test_data = []
   current_readings = {}
@@ -104,7 +62,7 @@ for data_file in data_files:
 
   test_data = np.array(test_data)
 
-  print("Points: ", len(test_data), len(readings));
+  print("Points: ", len(test_data), len(readings))
   if len(test_data) == 0:
     continue
 

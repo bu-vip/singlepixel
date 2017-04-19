@@ -69,3 +69,5 @@ fabric.properties
 /bazel-*
 # Ignore outputs generated during Bazel bootstrapping.
 /output/
+
+srcgen

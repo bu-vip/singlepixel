@@ -5,13 +5,14 @@ import matplotlib
 import numpy as np
 from numpy import genfromtxt
 
+from src.main.python.tensorflow.feature import combined_to_features
+
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
-from read_session import combine_data, filter_by_number_skeletons, \
-  combined_to_features, get_bounds, save_as_csv
-
-from nn import Regressor
-from session_pb2 import Session
+from src.main.python.tensorflow.read_session import combine_data, \
+  filter_by_number_skeletons
+from src.main.python.tensorflow.nn import Regressor
+from srcgen.session_pb2 import Session
 
 
 def calc_distance(actual, predicted):
@@ -82,10 +83,17 @@ def graph_point_distribution(labels, save_file=None):
   else:
     plt.show()
 
+
 def unison_shuffled_copies(a, b):
   assert len(a) == len(b)
   p = np.random.permutation(len(a))
   return a[p], b[p]
+
+
+def get_bounds(labels):
+  mins = np.amin(labels, axis=0)
+  maxs = np.amax(labels, axis=0)
+  return mins[0], maxs[0], mins[1], maxs[1]
 
 
 def v2_test():
@@ -95,13 +103,15 @@ def v2_test():
 
   session_dir = "../../resources/datav2/"
   session_ids = [
-    "1597641000", # corn4
-    "397269922", # corn3
-    "497042981", # corn2
+    "1597641000",  # corn4
+    "397269922",  # corn3
+    "497042981",  # corn2
   ]
 
   recording_blacklist = [
   ]
+
+  num_sensors = 11
 
   combined = []
   for session_id in session_ids:
@@ -115,11 +125,13 @@ def v2_test():
     # Load and combine data
     for recording in session.recordings:
       if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
-        print("Loading {} {} {}".format(session.id, recording.name, recording.id))
+        print(
+            "Loading {} {} {}".format(session.id, recording.name, recording.id))
         recording_dir = os.path.join(root_dir, str(recording.id))
-        combined += combine_data(recording_dir)
+        combined += combine_data(recording_dir, num_sensors=num_sensors)
       else:
-        print("Skipped recording {} {} {}".format(session.id, recording.name, recording.id))
+        print("Skipped recording {} {} {}".format(session.id, recording.name,
+                                                  recording.id))
 
   print("Filtering by number of occupants...")
   clipped = filter_by_number_skeletons(combined)
@@ -127,7 +139,9 @@ def v2_test():
   print("Forming data matrices...")
   # Combine all clips with 1 person into giant matrices
   single_person_clips = clipped[1]
-  all_labels, all_data = combined_to_features(single_person_clips[0])
+  all_labels, all_data = combined_to_features(single_person_clips[0],
+                                              average_size=5000,
+                                              sensor_raw=True)
   for clip in single_person_clips[1:]:
     labels, data = combined_to_features(clip)
     if len(labels) > 0:

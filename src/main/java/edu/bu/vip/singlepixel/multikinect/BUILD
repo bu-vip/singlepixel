@@ -35,6 +35,6 @@ java_library(
         "//:com_google_protobuf_protobuf_java",
         "//:org_eclipse_paho_client_mqttv3",
         "//:org_slf4j_slf4j_api",
-        "//src/main/proto:singlepixel",
+        "//src/main/proto:singlepixel_java",
     ],
 )

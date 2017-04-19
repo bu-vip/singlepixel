@@ -10,7 +10,7 @@ java_binary(
         "//:com_google_guava_guava",
         "//:com_google_protobuf_protobuf_java",
         "//:org_eclipse_paho_client_mqttv3",
-        "//src/main/proto:singlepixel",
+        "//src/main/proto:singlepixel_java",
     ],
 )
 

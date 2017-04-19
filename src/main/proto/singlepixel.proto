@@ -1,7 +1,6 @@
 syntax = 'proto3';
 
-//import "google/protobuf/timestamp.proto";
-import "thirdparty/protobuf/google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto";
 
 package bu.vip.singlepixel;
 

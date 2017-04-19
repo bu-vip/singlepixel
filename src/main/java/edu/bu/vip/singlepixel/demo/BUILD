@@ -17,6 +17,6 @@ java_binary(
         "//:org_eclipse_paho_client_mqttv3",
         "//:org_slf4j_slf4j_api",
         "//:smartthings_ratpack_protobuf",
-        "//src/main/proto:singlepixel",
+        "//src/main/proto:singlepixel_java",
     ],
 )
