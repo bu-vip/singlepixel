@@ -65,15 +65,10 @@ maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "
 
 # singlepixellocalization dependencies end
 
-#git_repository(
-#    name = "multikinect",
-#    remote = "https://github.com/bu-vip/multikinect.git",
-#    commit = "b4ec4483812d1fa9d6b806f3d249268f8479c4c5"
-#)
-
-local_repository(
+git_repository(
     name = "multikinect",
-    path = "/home/doug/Development/bu_code/research/multikinect"
+    remote = "https://github.com/bu-vip/multikinect.git",
+    commit = "a508d5f07a8d2f22f6c7316b4fc9be30f6a2518f"
 )
 
 http_jar(
@@ -95,14 +90,12 @@ git_repository(
 )
 
 # proto build rules
-#git_repository(
-#  name = "org_pubref_rules_protobuf",
-#  remote = "https://github.com/pubref/rules_protobuf",
-#  tag = "v0.7.1",
-#)
-local_repository(
+git_repository(
   name = "org_pubref_rules_protobuf",
-  path = "/home/doug/Development/thirdparty/rules_protobuf"
+#  remote = "https://github.com/pubref/rules_protobuf",
+  remote = "https://github.com/Dig-Doug/rules_protobuf",
+  commit = "546aafeb6afc03a59cc805d748e7fdeeda1f0455",
+#  tag = "v0.7.1",
 )
 
 # Load Java protobuf rules
