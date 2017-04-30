@@ -2,7 +2,7 @@ import "./App.css";
 
 import React, {Component} from "react";
 import {defaults, Line} from "react-chartjs-2";
-import {sendGetStateRequest} from "./api";
+import {sendBackgroundRequest, sendGetStateRequest} from "./api";
 
 // Disable animating charts by default.
 defaults.global.animation = false;
@@ -54,6 +54,10 @@ class App extends Component {
         };
 
     }
+
+    handleBackgroundClick = (event)  => {
+       sendBackgroundRequest();
+    };
 
     render() {
         // Show an error if state request fails for any reason
@@ -108,6 +112,7 @@ class App extends Component {
                 data={data}
                 options={options}
             />
+            <button onClick={this.handleBackgroundClick}>Background</button>
             <pre>
                 {JSON.stringify(this.state.sensors, null, 2)}
             </pre>

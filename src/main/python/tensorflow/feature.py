@@ -63,16 +63,22 @@ def readings_dict_to_features(dict, raw):
   return final
 
 
-def _combined_to_feature(combined, sensor_raw):
+def _combined_to_feature(combined, sensor_raw=None, background=None):
   labels = []
   for skeleton in combined['synced'].skeletons:
     avg_pos = calculate_average_position(skeleton)
     labels += [avg_pos[0], avg_pos[2]]
   features = readings_dict_to_features(combined['sp'], sensor_raw)
+
+  # Subtract background if it is provided
+  if background is not None:
+    features = features - background
+
   return np.array(labels), features
 
 
-def combined_to_features(combined, average_size=5000, sensor_raw=True):
+def combined_to_features(combined, average_size=0, sensor_raw=None,
+    background=None):
   """
   Converts combined data into labels and features. 
   :param combined: Combined data
@@ -84,7 +90,8 @@ def combined_to_features(combined, average_size=5000, sensor_raw=True):
   all_features = []
   previous_features = []
   for data in combined:
-    labels, features = _combined_to_feature(data, sensor_raw)
+    labels, features = _combined_to_feature(data, sensor_raw=sensor_raw,
+                                            background=background)
     # Add the current reading to the buffer
     previous_features.append(features)
     # Remove old element to maintain length
@@ -94,9 +101,12 @@ def combined_to_features(combined, average_size=5000, sensor_raw=True):
     # If buffer is full, calculate final feature
     if len(previous_features) == average_size:
       all_labels.append(labels)
-      buffer_mean = np.mean(np.array(previous_features), axis=0)
-      buffer_std = np.std(np.array(previous_features), axis=0)
-      final_feature = (features - buffer_mean) / buffer_std
-      all_features.append(final_feature)
+      if average_size > 0:
+        buffer_mean = np.mean(np.array(previous_features), axis=0)
+        buffer_std = np.std(np.array(previous_features), axis=0)
+        final_feature = (features - buffer_mean) / buffer_std
+        all_features.append(final_feature)
+      else:
+        all_features.append(features)
 
   return np.array(all_labels), np.array(all_features)

@@ -1,8 +1,6 @@
 import matplotlib
-import numpy as np
 
 from src.main.python.tensorflow.feature import readings_dict_to_features
-from src.main.python.tensorflow.graphing import colorline
 from srcgen.singlepixel_pb2 import SinglePixelSensorReading
 import tensorflow as tf
 from src.main.python.tensorflow.read_session import read_delimited_protos_file, \
@@ -13,38 +11,21 @@ matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 
 
+from src.main.python.tensorflow.graphing import colorline
 import numpy as np
 
 
-data_files = [
-  #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/269008718817948824/plugins/singlepixel.pbdat",
-  #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/4490902409508234808/plugins/singlepixel.pbdat",
-  #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/7452919585598622080/plugins/singlepixel.pbdat",
-  #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/8297053638602816068/plugins/singlepixel.pbdat",
-  #"/home/doug/Development/bu_code/research/singlepixellocalization/src/main/resources/datav2/1597641000/8482739308465044588/plugins/singlepixel.pbdat",
-  "/home/doug/Desktop/boundary.pbdat",
-]
-
-for data_file in data_files:
-  print(data_file)
-  model_file = "models/running_mean_model.pb_checkpoint5000.pbdat"
-  min_x = -1.18
-  max_x = 1.11
-  min_y = 1.19
-  max_y = 3.34
-
+def to_feature_array(data_file, sensor_raw, buffer_size):
   readings = read_delimited_protos_file(SinglePixelSensorReading, data_file)
-  num_sensors = 11
   test_data = []
   current_readings = {}
   readings_buffer = []
-  buffer_size = 5000
   for reading in readings:
     sp_id = sp_reading_key(reading)
 
     current_readings[sp_id] = reading
     if len(current_readings) == num_sensors:
-      feature = readings_dict_to_features(current_readings)
+      feature = readings_dict_to_features(current_readings, sensor_raw)
 
       readings_buffer.append(feature)
 
@@ -54,15 +35,41 @@ for data_file in data_files:
       while len(readings_buffer) > buffer_size:
         readings_buffer.pop(0)
 
-      buffer_mean = np.mean(np.array(readings_buffer), axis=0)
-      buffer_std = np.std(np.array(readings_buffer), axis=0)
-      final_feature = (feature - buffer_mean) / buffer_std
+      final_feature = feature
+      if buffer_size > 0:
+        buffer_mean = np.mean(np.array(readings_buffer), axis=0)
+        buffer_std = np.std(np.array(readings_buffer), axis=0)
+        final_feature = (feature - buffer_mean) / buffer_std
 
       test_data.append(final_feature)
 
-  test_data = np.array(test_data)
+  return np.array(test_data)
 
-  print("Points: ", len(test_data), len(readings))
+background_files = [
+  "/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/singlepixel/sessions/539493861/6983560803582573837/plugins/singlepixel.pbdat",
+]
+
+data_files = [
+  "/home/doug/Desktop/singlepixel/sessions/31173029/5304931410945878374/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/singlepixel/sessions/31173029/1557267852668004352/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/singlepixel/sessions/539493861/8942535411940740244/plugins/singlepixel.pbdat",
+]
+
+for background_file, data_file in zip(background_files, data_files):
+  print(data_file)
+  model_file = "/home/doug/Desktop/multikinect/models/running_mean_model.pb"
+  min_x = -1.18
+  max_x = 1.11
+  min_y = 1.19
+  max_y = 3.34
+
+  num_sensors = 11
+  background = to_feature_array(background_file, True, 0)
+  data = to_feature_array(data_file, True, 0)
+  test_data = data - np.mean(background, axis=0)
+
   if len(test_data) == 0:
     continue
 

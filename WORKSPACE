@@ -92,10 +92,10 @@ git_repository(
 # proto build rules
 git_repository(
   name = "org_pubref_rules_protobuf",
-#  remote = "https://github.com/pubref/rules_protobuf",
-  remote = "https://github.com/Dig-Doug/rules_protobuf",
-  commit = "546aafeb6afc03a59cc805d748e7fdeeda1f0455",
-#  tag = "v0.7.1",
+  #remote = "https://github.com/pubref/rules_protobuf",
+  remote = "https://github.com/Dig-Doug/rules_protobuf.git",
+  #tag = "v0.7.1",
+  commit = "c878685946d25df2e8644b58978bd02139f92784"
 )
 
 # Load Java protobuf rules
