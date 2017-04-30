@@ -1,8 +1,11 @@
-# multikinect + singlepixellocalization
+# MultiKinect + singlepixellocalization
 This directory contains a plugin for collecting single pixel sensor data with 
-[multikinect](https://github.com/bu-vip/multikinect).
+[MultiKinect](https://github.com/bu-vip/multikinect).
 
 ## Running
+#### Requirements
+* Mqtt broker, such as [ActiveMQ](http://activemq.apache.org/download.html)
+
 First, start the mqtt broker:
 ```bash
 ./activemq console
@@ -16,7 +19,8 @@ cd doug/singlepixellocalization/src/main/python/raspberrypidrivers/
 python MQTTMux.py --host <broker-ip> --time 100 --gain 60
 ```
 
-From the root of the repo, run:
+From the root of the repo, build and run:
+> NOTE: make sure your data directory path is an absolute path (ie: /home/user/Desktop/multikinect_data)
 ```bash
 bazel run //src/main/java/edu/bu/vip/singlepixel/multikinect:main -- --data_dir <directory-path>
 ```
