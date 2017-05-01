@@ -59,11 +59,11 @@ maven_jar(name = "net_lingala_zip4j_zip4j", artifact = "net.lingala.zip4j:zip4j:
 
 # multikinect dependencies end
 
-# singlepixellocalization dependencies start
+# singlepixel dependencies start
 
 maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "org.eclipse.paho:org.eclipse.paho.client.mqttv3:jar:1.1.0")
 
-# singlepixellocalization dependencies end
+# singlepixel dependencies end
 
 git_repository(
     name = "multikinect",

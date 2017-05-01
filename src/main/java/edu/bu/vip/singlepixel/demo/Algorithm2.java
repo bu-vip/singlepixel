@@ -2,6 +2,7 @@ package edu.bu.vip.singlepixel.demo;
 
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.common.math.Stats;
 import edu.bu.vip.multikinect.Protos.Position;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +95,7 @@ public class Algorithm2 {
   private final TensorFlowInterface tensorFlowInterface;
   private final String inputNodeName;
   private final String outputNodeName;
+  private final Set<String> noBackgroundErrorSensors = Sets.newConcurrentHashSet();
 
   private Algorithm2(int numSensors, boolean calcLuminance, boolean backgroundSubtraction,
       int numPastReadings, String modelPath, String inputNodeName, String outputNodeName) {
@@ -203,7 +206,12 @@ public class Algorithm2 {
       if (backgroundSubtraction) {
         int requiredBackground = (calcLuminance ? 1 : NUM_CHANNELS);
         if (means == null || means.size() != requiredBackground) {
-          logger.warn("No background data for sensor: {}", sensorKey);
+          // Only print the error once
+          if (!noBackgroundErrorSensors.contains(sensorKey)) {
+            logger.warn("No background data for sensor: {} - This error will only appear once",
+                sensorKey);
+            noBackgroundErrorSensors.add(sensorKey);
+          }
           return Position.getDefaultInstance();
         }
       }

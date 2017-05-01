@@ -1,4 +1,4 @@
-# multikinect + singlepixellocalization
+# MultiKinect + SinglePixel
 This directory contains a plugin for collecting single pixel sensor data with 
 [multikinect](https://github.com/bu-vip/multikinect).
 

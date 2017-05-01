@@ -97,19 +97,24 @@ def get_bounds(labels):
   return mins[0], maxs[0], mins[1], maxs[1]
 
 
+def np_append(dest, to_append):
+  if dest is None:
+    return to_append
+  elif len(to_append) > 0:
+    return np.concatenate([dest, to_append])
+  return dest
+
+
 def combine_clips(clips, average_size, sensor_raw, background):
-  all_labels, all_data = combined_to_features(clips[0],
-                                              average_size=average_size,
-                                              sensor_raw=sensor_raw,
-                                              background=background)
-  for clip in clips[1:]:
+  all_labels = None
+  all_data = None
+  for clip in clips:
     labels, data = combined_to_features(clip,
                                         average_size=average_size,
                                         sensor_raw=sensor_raw,
                                         background=background)
-    if len(labels) > 0:
-      all_labels = np.concatenate([all_labels, labels])
-      all_data = np.concatenate([all_data, data])
+    all_labels = np_append(all_labels, labels)
+    all_data = np_append(all_data, data)
 
   # Tensorflow works on float32s
   all_labels = all_labels.astype(np.float32)
@@ -121,12 +126,12 @@ def combine_clips(clips, average_size, sensor_raw, background):
 def v2_test():
   print("V2 test")
 
-  name = "old"
+  name = "background_sub"
 
   model_dir = "/home/doug/Desktop/multikinect/models/"
-  session_dir = "/home/doug/Desktop/singlepixel/sessions/"
+  session_dir = "/home/doug/Desktop/multikinect/sessions/"
   session_ids = [
-    "436310705",
+    "271320373",
   ]
 
   recording_blacklist = [
@@ -137,7 +142,7 @@ def v2_test():
   average_size = 0
   sensor_raw = True
   skip_cache = True
-  background_sub = False
+  background_sub = True
 
   hash_string = ""
   for session_id in session_ids:
@@ -157,6 +162,8 @@ def v2_test():
   else:
     combined = []
     background_data = []
+    all_labels = None
+    all_data = None
     for session_id in session_ids:
       root_dir = os.path.join(session_dir, str(session_id))
       session_file = str(session_id) + ".session"
@@ -183,20 +190,29 @@ def v2_test():
           print("Skipped recording {} {} {}".format(session.id, recording.name,
                                                     recording.id))
 
-    print("Filtering by number of occupants...")
-    clipped = filter_by_number_skeletons(combined)
+      print("Filtering by number of occupants...")
+      clipped = filter_by_number_skeletons(combined)
 
-    print("Forming data matrices...")
-    background = None
-    if background_sub:
-      # Calculate background
-      background_clips = filter_by_number_skeletons(background_data)[0]
-      background_labels, background_data = combine_clips(background_clips, 0, sensor_raw, None)
-      background = np.mean(background_data, axis=0)
+      print("Forming data matrices...")
+      background = None
+      if background_sub:
+        # Calculate background
+        background_clips = filter_by_number_skeletons(background_data)[0]
+        background_labels, background_data = combine_clips(background_clips, 0,
+                                                           sensor_raw, None)
+        background = np.mean(background_data, axis=0)
 
-    # Combine all clips with 1 person into giant matrices
-    single_person_clips = clipped[1]
-    all_labels, all_data = combine_clips(single_person_clips, average_size, sensor_raw, background)
+        if background_sub and len(background_data) == 0:
+          print("Error, no background data")
+
+      # Combine all clips with 1 person into giant matrices
+      single_person_clips = clipped[1]
+      session_labels, session_data = combine_clips(single_person_clips,
+                                                   average_size, sensor_raw,
+                                                   background)
+
+      all_labels = np_append(all_labels, session_labels)
+      all_data = np_append(all_data, session_data)
 
     print("Caching data: ", cache_key)
     os.makedirs(os.path.dirname(label_cache_file), exist_ok=True)
@@ -218,7 +234,7 @@ def v2_test():
   test_labels = all_labels[middle:]
 
   hidden_layers = [100, 100, 100]
-  num_epochs = 10000
+  num_epochs = 5000
   save_model_file = os.path.join(model_dir, name + "_model.pb")
 
   regressor = Regressor(len(all_data[0]), len(all_labels[0]), hidden_layers)
