@@ -126,12 +126,13 @@ def combine_clips(clips, average_size, sensor_raw, background):
 def v2_test():
   print("V2 test")
 
-  name = "background_sub"
+  name = "all_change_2"
 
   model_dir = "/home/doug/Desktop/multikinect/models/"
   session_dir = "/home/doug/Desktop/multikinect/sessions/"
   session_ids = [
     "271320373",
+    "612073570"
   ]
 
   recording_blacklist = [
@@ -141,8 +142,11 @@ def v2_test():
   num_sensors = 11
   average_size = 0
   sensor_raw = True
-  skip_cache = True
   background_sub = True
+  all_readings_must_change = True
+  hidden_layers = [100, 100, 100]
+  num_epochs = 10000
+
 
   hash_string = ""
   for session_id in session_ids:
@@ -150,74 +154,70 @@ def v2_test():
   hash_string += str(num_sensors)
   hash_string += str(average_size)
   hash_string += str(sensor_raw)
-
-  cache_dir = "/tmp/singlepixel"
+  hash_string += str(background_sub)
+  hash_string += str(all_readings_must_change)
+  hash_string += str(hidden_layers)
+  hash_string += str(num_epochs)
   cache_key = hashlib.sha256(hash_string.encode("utf8")).hexdigest()
-  label_cache_file = os.path.join(cache_dir, cache_key + "_labels.npy")
-  data_cache_file = os.path.join(cache_dir, cache_key + "_data.npy")
-  if skip_cache is False and os.path.isfile(label_cache_file) and os.path.isfile(data_cache_file):
-    print("Using cached data: ", cache_key)
-    all_labels = np.load(label_cache_file)
-    all_data = np.load(data_cache_file)
-  else:
+
+  name += "_" + cache_key
+  print("Name", name)
+
+  all_labels = None
+  all_data = None
+  for session_id in session_ids:
+    root_dir = os.path.join(session_dir, str(session_id))
+    session_file = str(session_id) + ".session"
+    session = Session()
+    with open(os.path.join(root_dir, session_file), 'rb') as f:
+      buffer = f.read()
+      session.ParseFromString(buffer)
+
+    # Load and combine data
     combined = []
     background_data = []
-    all_labels = None
-    all_data = None
-    for session_id in session_ids:
-      root_dir = os.path.join(session_dir, str(session_id))
-      session_file = str(session_id) + ".session"
-      session = Session()
-      with open(os.path.join(root_dir, session_file), 'rb') as f:
-        buffer = f.read()
-        session.ParseFromString(buffer)
+    for recording in session.recordings:
+      if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
+        print(
+            "Loading {} {} {}".format(session.id, recording.name,
+                                      recording.id))
+        recording_dir = os.path.join(root_dir, str(recording.id))
+        combined_data = combine_data(recording_dir,
+                                     num_sensors=num_sensors,
+                                     all_sensors_must_change=all_readings_must_change)
 
-      # Load and combine data
-      for recording in session.recordings:
-        if recording.name not in recording_blacklist and recording.id not in recording_blacklist:
-          print(
-              "Loading {} {} {}".format(session.id, recording.name,
-                                        recording.id))
-          recording_dir = os.path.join(root_dir, str(recording.id))
-          combined_data = combine_data(recording_dir, num_sensors=num_sensors)
-
-          # Check if recording has "background" in name, if so it is a background
-          if "background" in recording.name:
-            background_data += combined_data
-          else:
-            combined += combined_data
+        # Check if recording has "background" in name, if so it is a background
+        if "background" in recording.name:
+          background_data += combined_data
         else:
-          print("Skipped recording {} {} {}".format(session.id, recording.name,
-                                                    recording.id))
+          combined += combined_data
+      else:
+        print("Skipped recording {} {} {}".format(session.id, recording.name,
+                                                  recording.id))
 
-      print("Filtering by number of occupants...")
-      clipped = filter_by_number_skeletons(combined)
+    print("Filtering by number of occupants...")
+    clipped = filter_by_number_skeletons(combined)
 
-      print("Forming data matrices...")
-      background = None
-      if background_sub:
-        # Calculate background
-        background_clips = filter_by_number_skeletons(background_data)[0]
-        background_labels, background_data = combine_clips(background_clips, 0,
-                                                           sensor_raw, None)
-        background = np.mean(background_data, axis=0)
+    print("Forming data matrices...")
+    background = None
+    if background_sub:
+      # Calculate background
+      background_clips = filter_by_number_skeletons(background_data)[0]
+      background_labels, background_data = combine_clips(background_clips, 0,
+                                                         sensor_raw, None)
+      background = np.mean(background_data, axis=0)
 
-        if background_sub and len(background_data) == 0:
-          print("Error, no background data")
+      if background_sub and len(background_data) == 0:
+        print("Error, no background data")
 
-      # Combine all clips with 1 person into giant matrices
-      single_person_clips = clipped[1]
-      session_labels, session_data = combine_clips(single_person_clips,
-                                                   average_size, sensor_raw,
-                                                   background)
+    # Combine all clips with 1 person into giant matrices
+    single_person_clips = clipped[1]
+    session_labels, session_data = combine_clips(single_person_clips,
+                                                 average_size, sensor_raw,
+                                                 background)
 
-      all_labels = np_append(all_labels, session_labels)
-      all_data = np_append(all_data, session_data)
-
-    print("Caching data: ", cache_key)
-    os.makedirs(os.path.dirname(label_cache_file), exist_ok=True)
-    np.save(label_cache_file, all_labels)
-    np.save(data_cache_file, all_data)
+    all_labels = np_append(all_labels, session_labels)
+    all_data = np_append(all_data, session_data)
 
   # Shuffle
   # all_labels, all_data = unison_shuffled_copies(all_labels, all_data)
@@ -233,8 +233,6 @@ def v2_test():
   train_labels = all_labels[:middle]
   test_labels = all_labels[middle:]
 
-  hidden_layers = [100, 100, 100]
-  num_epochs = 5000
   save_model_file = os.path.join(model_dir, name + "_model.pb")
 
   regressor = Regressor(len(all_data[0]), len(all_labels[0]), hidden_layers)

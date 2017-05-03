@@ -12,26 +12,35 @@ def test():
   matplotlib.use("Qt5Agg")
   import matplotlib.pyplot as plt
 
-  session_dir = "/home/doug/Desktop/singlepixel/sessions/"
+  session_dirs = [
+    "/home/doug/Desktop/singlepixel/sessions/",
+    "/home/doug/Desktop/singlepixel/sessions/",
+    "/home/doug/Desktop/singlepixel/sessions/",
+    "/home/doug/Desktop/singlepixel/sessions/",
+    "/home/doug/Desktop/multikinect/sessions/",
+    "/home/doug/Desktop/multikinect/sessions/",
+    ]
   session_ids = [
-    #"31173029",
-    #"436310705",
-    #"539493861",
+    "31173029",
+    "436310705",
+    "539493861",
     "998797274",
+    "271320373",
+    "612073570",
   ]
 
   recording_whitelist = [
      "background1",
-     "background2",
-    # "metronome1",
-    # "metronome2",
+     #"background2",
+     #"metronome1",
+     #"metronome2",
   ]
 
   num_sensors = 11
 
   recording_names = []
   sensor_data = []
-  for session_id in session_ids:
+  for session_dir, session_id in zip(session_dirs, session_ids):
     root_dir = os.path.join(session_dir, str(session_id))
     session_file = str(session_id) + ".session"
     session = Session()

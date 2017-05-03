@@ -46,20 +46,24 @@ def to_feature_array(data_file, sensor_raw, buffer_size):
   return np.array(test_data)
 
 background_files = [
-  "/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
-  "/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
-  "/home/doug/Desktop/singlepixel/sessions/539493861/6983560803582573837/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/31173029/1472039048864611545/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/539493861/6983560803582573837/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/multikinect/sessions/612073570/8679249853089906911/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/multikinect/sessions/612073570/8679249853089906911/plugins/singlepixel.pbdat",
 ]
 
 data_files = [
-  "/home/doug/Desktop/singlepixel/sessions/31173029/5304931410945878374/plugins/singlepixel.pbdat",
-  "/home/doug/Desktop/singlepixel/sessions/31173029/1557267852668004352/plugins/singlepixel.pbdat",
-  "/home/doug/Desktop/singlepixel/sessions/539493861/8942535411940740244/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/31173029/5304931410945878374/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/31173029/1557267852668004352/plugins/singlepixel.pbdat",
+  #"/home/doug/Desktop/singlepixel/sessions/539493861/8942535411940740244/plugins/singlepixel.pbdat",
+  "/home/doug/Desktop/demo_recordings/2017-05-01T15:00:11.218Z.pbdat",
+  "/home/doug/Desktop/demo_recordings/2017-05-01T15:00:59.246Z.pbdat",
 ]
 
 for background_file, data_file in zip(background_files, data_files):
   print(data_file)
-  model_file = "/home/doug/Desktop/multikinect/models/running_mean_model.pb"
+  model_file = "/home/doug/Desktop/multikinect/models/background_sub2_model.pb"
   min_x = -1.18
   max_x = 1.11
   min_y = 1.19
