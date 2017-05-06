@@ -12,6 +12,7 @@ import edu.bu.vip.multikinect.sync.SkeletonUtils;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import edu.bu.vip.singlepixel.demo.Protos.Bounds;
 import edu.bu.vip.singlepixel.demo.Protos.Occupant;
+import edu.bu.vip.singlepixel.tensorflow.TensorFlowLocationPredictor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -41,7 +42,7 @@ public class Demo implements MqttCallback {
   private final String mqttBroker;
 
   private Controller controller;
-  private Algorithm2 algorithm;
+  private LocalizationAlgorithm algorithm;
   private MqttClient client;
 
   private final Object backgroundLock = new Object();
@@ -57,10 +58,7 @@ public class Demo implements MqttCallback {
   private final Object trueOccupantLock = new Object();
   private ImmutableList<Position> trueOccupants = ImmutableList.of();
 
-  public Demo(String modelPath,
-      String recordingDir,
-      String multiKinectDataDir,
-      long calibrationId,
+  public Demo(String modelPath, String recordingDir, String multiKinectDataDir, long calibrationId,
       String mqttBroker) {
     this.modelPath = modelPath;
     this.recordingDir = recordingDir;
@@ -70,35 +68,43 @@ public class Demo implements MqttCallback {
   }
 
   public void start() throws Exception {
-    // Load model with the algorithm
-    algorithm = Algorithm2.builder()
+    // Create predictor
+    LocationPredictor predictor = TensorFlowLocationPredictor.builder()
+        .setInputNodeName("input")
+        .setModelPath(modelPath)
+        .setOutputNodeName("output")
+        .build();
+
+    // Load algorithm
+    algorithm = LocalizationAlgorithm.builder()
         .setBackgroundSubtraction(true)
         .setCalcLuminance(false)
-        .setInputNodeName("input")
         .setNumPastReadings(1)
-        .setOutputNodeName("output")
-        .setModelPath(modelPath)
+        .setPredictor(predictor)
         .setNumSensors(11)
         .build();
 
+    // Connect to mqtt
     try {
       MemoryPersistence persistence = new MemoryPersistence();
       String clientId = "demo-" + (int) (Math.random() * 99999);
       client = new MqttClient(mqttBroker, clientId, persistence);
+
+      MqttConnectOptions connOpts = new MqttConnectOptions();
+      connOpts.setCleanSession(true);
+      client.connect(connOpts);
+      client.setCallback(this);
+
+      // subscribe to receive sensor readings
+      String subscribeDest = "/#";
+      client.subscribe(subscribeDest);
     } catch (MqttException e) {
       throw new RuntimeException("Error creating MQTT client.");
     }
 
-    MqttConnectOptions connOpts = new MqttConnectOptions();
-    connOpts.setCleanSession(true);
-    client.connect(connOpts);
-    client.setCallback(this);
-
-    // subscribe to receive sensor readings
-    String subscribeDest = "/#";
-    client.subscribe(subscribeDest);
-
+    // Start MultiKinect controller
     controller = new Controller(multiKinectDataDir);
+    controller.start();
 
     // Load calibration
     Optional<Calibration> optCal = controller.getCalibrationStore().getCalibration(calibrationId);
@@ -202,10 +208,10 @@ public class Demo implements MqttCallback {
   public Bounds getBounds() {
     // TODO(doug) - Don't hardcode, these should be loaded from model / data set
     Bounds.Builder builder = Bounds.newBuilder();
-    builder.setMinX(-1.1817513);
-    builder.setMaxX(1.1170805);
-    builder.setMinY(-1.1817513);
-    builder.setMaxY(3.3466797);
+    builder.setMinX(-1.5);
+    builder.setMaxX(1.5);
+    builder.setMinZ(1.0);
+    builder.setMaxZ(3.5);
     return builder.build();
   }
 
@@ -221,9 +227,9 @@ public class Demo implements MqttCallback {
           algorithm.addReading(reading);
 
           // Run algorithm
-          Position pos = algorithm.predict();
+          ImmutableList<Position> positions = algorithm.predict();
           synchronized (estOccupantLock) {
-            estOccupantList = ImmutableList.of(pos);
+            estOccupantList = ImmutableList.copyOf(positions);
           }
 
           synchronized (recordingLock) {
@@ -255,6 +261,7 @@ public class Demo implements MqttCallback {
   public void stop() throws Exception {
 
     controller.getRealTimeManager().getSyncedFrameBus().unregister(this);
+    controller.stop();
 
     if (client.isConnected()) {
       client.disconnect();

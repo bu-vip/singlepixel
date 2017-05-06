@@ -14,7 +14,6 @@ java_binary(
     deps = [
         ":algorithm",
         ":demo",
-        ":tensorflowinterface",
         ":webconsole",
         "//:com_beust_jcommander",
         "//:com_google_guava_guava",
@@ -32,12 +31,13 @@ java_library(
     ],
     deps = [
         ":algorithm",
-        ":tensorflowinterface",
+        ":locationpredictor",
         "//:com_google_guava_guava",
         "//:com_google_protobuf_protobuf_java",
         "//:com_google_protobuf_protobuf_java_util",
         "//:org_eclipse_paho_client_mqttv3",
         "//:org_slf4j_slf4j_api",
+        "//src/main/java/edu/bu/vip/singlepixel/tensorflow:predictor",
         "//src/main/proto:demo_java",
         "//src/main/proto:singlepixel_java",
         "@multikinect//src/main/java/edu/bu/vip/multikinect/controller",
@@ -66,29 +66,29 @@ java_library(
 )
 
 java_library(
-    name = "tensorflowinterface",
-    srcs = [
-        "TensorFlowInterface.java",
-    ],
-    deps = [
-        "//:com_google_guava_guava",
-        "//:org_slf4j_slf4j_api",
-        "@tensorflow_java_api//jar",
-        "@tensorflow_java_api_jni//:libtensorflow_jni",
-    ],
-)
-
-java_library(
     name = "algorithm",
     srcs = [
-        "Algorithm2.java",
+        "LocalizationAlgorithm.java",
     ],
     deps = [
-        ":tensorflowinterface",
+        ":locationpredictor",
         "//:com_google_guava_guava",
         "//:org_slf4j_slf4j_api",
         "//src/main/java/edu/bu/vip/singlepixel/util:readingutils",
         "//src/main/proto:singlepixel_java",
+        "@multikinect//src/main/proto:frame",
+    ],
+)
+
+java_library(
+    name = "locationpredictor",
+    srcs = [
+        "LocationPredictor.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:com_google_guava_guava",
+        "//:org_slf4j_slf4j_api",
         "@multikinect//src/main/proto:frame",
     ],
 )

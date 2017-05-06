@@ -1,4 +1,4 @@
-package edu.bu.vip.singlepixel.demo;
+package edu.bu.vip.singlepixel.tensorflow;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,6 +11,8 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 
 /**
+ * Runs TensorFlow models.
+ *
  * Adapted from: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/android/java/org/tensorflow/contrib/android/TensorFlowInferenceInterface.java
  */
 public class TensorFlowInterface {

@@ -25,11 +25,15 @@ public class Main {
       );
       demo.start();
 
+      WebConsole console = new WebConsole(demo);
+      console.start();
+
       System.out.println("Press enter to stop");
       Scanner scanner = new Scanner(System.in);
       scanner.nextLine();
       scanner.close();
 
+      console.stop();
       demo.stop();
     }
 

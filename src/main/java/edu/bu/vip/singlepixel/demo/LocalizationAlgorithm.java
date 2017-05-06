@@ -17,7 +17,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Algorithm2 {
+/**
+ * Handles all pre-processing for the localization algorithm, e.g. background subtraction,
+ * calculating luminance from RGB, etc. Uses a {@link LocationPredictor} to do localization.
+ */
+public class LocalizationAlgorithm {
 
   public static class Builder {
 
@@ -25,9 +29,7 @@ public class Algorithm2 {
     private boolean calcLuminance = false;
     private boolean backgroundSubtraction = true;
     private int numPastReadings = 1;
-    private String modelPath;
-    private String inputNodeName;
-    private String outputNodeName;
+    private LocationPredictor predictor;
 
     public Builder() {
     }
@@ -52,29 +54,19 @@ public class Algorithm2 {
       return this;
     }
 
-    public Builder setModelPath(String modelPath) {
-      this.modelPath = modelPath;
+    public Builder setPredictor(LocationPredictor predictor) {
+      this.predictor = predictor;
       return this;
     }
 
-    public Builder setInputNodeName(String inputNodeName) {
-      this.inputNodeName = inputNodeName;
-      return this;
-    }
-
-    public Builder setOutputNodeName(String outputNodeName) {
-      this.outputNodeName = outputNodeName;
-      return this;
-    }
-
-    public Algorithm2 build() {
+    public LocalizationAlgorithm build() {
       if (numSensors < 0) {
         throw new RuntimeException("Num sensors not set");
       }
 
-      return new Algorithm2(numSensors, calcLuminance, backgroundSubtraction, numPastReadings,
-          modelPath,
-          inputNodeName, outputNodeName);
+      return new LocalizationAlgorithm(numSensors, calcLuminance, backgroundSubtraction,
+          numPastReadings,
+          predictor);
     }
   }
 
@@ -92,20 +84,17 @@ public class Algorithm2 {
   private final Map<String, List<SinglePixelSensorReading>> backgroundReadings = new HashMap<>();
   private final Map<String, List<Double>> backgroundReadingMeans = new HashMap<>();
   private final Map<String, EvictingQueue<SinglePixelSensorReading>> pastReadings = new HashMap<>();
-  private final TensorFlowInterface tensorFlowInterface;
-  private final String inputNodeName;
-  private final String outputNodeName;
   private final Set<String> noBackgroundErrorSensors = Sets.newConcurrentHashSet();
+  private final LocationPredictor predictor;
 
-  private Algorithm2(int numSensors, boolean calcLuminance, boolean backgroundSubtraction,
-      int numPastReadings, String modelPath, String inputNodeName, String outputNodeName) {
+  private LocalizationAlgorithm(int numSensors, boolean calcLuminance,
+      boolean backgroundSubtraction,
+      int numPastReadings, LocationPredictor predictor) {
     this.numSensors = numSensors;
     this.calcLuminance = calcLuminance;
     this.backgroundSubtraction = backgroundSubtraction;
     this.numPastReadings = numPastReadings;
-    this.tensorFlowInterface = new TensorFlowInterface(modelPath);
-    this.inputNodeName = inputNodeName;
-    this.outputNodeName = outputNodeName;
+    this.predictor = predictor;
   }
 
   public void addBackgroundReading(SinglePixelSensorReading reading) {
@@ -174,18 +163,37 @@ public class Algorithm2 {
     });
   }
 
-  public Position predict() {
+  /**
+   * Creates the feature vector, passes it to the predictor, and then returns the result.
+   *
+   * The feature vector is created using the following procedure:
+   * <ol>
+   * <li>
+   * Sort sensors by key (see {@link ReadingUtils#sensorKey}).
+   * Sorting is done using {@link Collections#sort}.
+   * </li>
+   * <li>
+   * If background subtraction is enabled,
+   * subtract background.
+   * </li>
+   * <li>
+   * Enumerate over readings in sorted order, adding values to feature vector. If using raw sensor
+   * values, they are ordered [R,G,B,C]. If using multiple readings per sensor, oldest is put first.
+   * </li>
+   * </ol>
+   */
+  public ImmutableList<Position> predict() {
     // Check that we have data from all sensors
     if (pastReadings.size() != numSensors) {
       logger.warn("Can't predict, invalid number of sensor data");
-      return Position.getDefaultInstance();
+      return ImmutableList.of();
     }
 
     // Check that we have enough data from each sensor
     for (String key : pastReadings.keySet()) {
       if (pastReadings.get(key).size() < numPastReadings) {
         logger.warn("Not enough data for sensor: {}", key);
-        return Position.getDefaultInstance();
+        return ImmutableList.of();
       }
     }
 
@@ -212,7 +220,7 @@ public class Algorithm2 {
                 sensorKey);
             noBackgroundErrorSensors.add(sensorKey);
           }
-          return Position.getDefaultInstance();
+          return ImmutableList.of();
         }
       }
 
@@ -244,19 +252,8 @@ public class Algorithm2 {
       }
     }
 
-    // Input feature vector into graph
-    tensorFlowInterface.feed(inputNodeName, featureArray, 1, featureArray.length);
-    // Run graph, calculate output node
-    tensorFlowInterface.run(ImmutableList.of(outputNodeName));
-    // Get output
-    float[] position = new float[2];
-    tensorFlowInterface.fetch(outputNodeName, position);
-
-    Position.Builder builder = Position.newBuilder();
-    builder.setX(position[0]);
-    builder.setY(0);
-    builder.setZ(position[1]);
-    return builder.build();
+    ImmutableList<Position> positions = predictor.predict(featureArray);
+    return positions;
   }
 
 }

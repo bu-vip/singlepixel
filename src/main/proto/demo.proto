@@ -25,6 +25,6 @@ message Occupant {
 message Bounds {
   double minX = 1;
   double maxX = 2;
-  double minY = 3;
-  double maxY = 4;
+  double minZ = 3;
+  double maxZ = 4;
 }

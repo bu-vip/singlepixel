@@ -2,13 +2,17 @@ import "./App.css";
 
 import React, {Component} from "react";
 import {defaults, Line} from "react-chartjs-2";
-import {sendBackgroundRequest, sendToggleRecordingRequest} from "./api";
+import {
+  sendBackgroundRequest,
+  sendGetStateRequest,
+  sendToggleRecordingRequest
+} from "./api";
 
 // Disable animating charts by default.
 defaults.global.animation = false;
 
 // Turns off the timer, console won't make status requests
-const DEBUG_NO_UPDATE = true;
+const DEBUG_NO_UPDATE = false;
 
 class App extends Component {
   constructor(props) {
@@ -16,12 +20,13 @@ class App extends Component {
 
     let timer;
     if (!DEBUG_NO_UPDATE) {
-      setInterval(() => {
+      timer = setInterval(() => {
         sendGetStateRequest().then((sensors) => {
           this.setState({
             sensors: sensors
           });
         }).catch(error => {
+          console.log(error);
           if (this.state.timer) {
             clearInterval(this.state.timer);
             this.setState({
@@ -44,11 +49,11 @@ class App extends Component {
             id: 1,
             estimatedPosition: {
               x: 3.4,
-              y: 2.7
+              z: 2.7
             },
             truePosition: {
               x: 3.5,
-              y: 2.6
+              z: 2.6
             },
             distance: 1
           }
@@ -60,11 +65,15 @@ class App extends Component {
   }
 
   handleBackgroundClick = (event) => {
-    sendBackgroundRequest();
+    sendBackgroundRequest().catch(error => {
+      console.log(error);
+    });
   };
 
   handleRecordingClick = (event) => {
-    sendToggleRecordingRequest();
+    sendToggleRecordingRequest().catch(error => {
+      console.log(error);
+    });
   };
 
   render() {
@@ -83,25 +92,39 @@ class App extends Component {
             pointHoverRadius: 20,
           };
 
+          let result = [];
+          if (person.estimatedPosition) {
+            result.push(
+                {
+                  label: 'Person ' + person.id + " estimated",
+                  ...basePoint,
+                  pointBackgroundColor: 'rgba(200, 0, 0, 1)',
+                  data: [
+                    {
+                      x: person.estimatedPosition.x,
+                      y: person.estimatedPosition.z
+                    }
+                  ]
+                });
+          }
+          if (person.truePosition) {
+            result.push(
+                {
+                  label: 'Person ' + person.id + " true",
+                  ...basePoint,
+                  pointBackgroundColor: 'rgba(0, 0, 200, 1)',
+                  data: [
+                    {
+                      x: person.truePosition.x,
+                      y: person.truePosition.z
+                    }
+                  ]
+                }
+            );
+          }
+
           // Return two data sets, one for true and one for estimated
-          return [
-            {
-              label: 'Person ' + person.id + " estimated",
-              ...basePoint,
-              pointBackgroundColor: 'rgba(200, 0, 0, 1)',
-              data: [
-                person.estimatedPosition
-              ]
-            },
-            {
-              label: 'Person ' + person.id + " true",
-              ...basePoint,
-              pointBackgroundColor: 'rgba(0, 0, 200, 1)',
-              data: [
-                person.truePosition
-              ]
-            }
-          ]
+          return result;
         }));
 
     let data = {
@@ -120,8 +143,8 @@ class App extends Component {
         }],
         yAxes: [{
           ticks: {
-            min: this.state.sensors.bounds.minY,
-            max: this.state.sensors.bounds.maxY,
+            min: this.state.sensors.bounds.minZ,
+            max: this.state.sensors.bounds.maxZ,
           }
         }]
       },
