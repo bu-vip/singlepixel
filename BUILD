@@ -166,7 +166,7 @@ java_library(
     ],
 )
 
-# singlepixellocalization
+# singlepixel
 
 java_library(
     name = "org_eclipse_paho_client_mqttv3",

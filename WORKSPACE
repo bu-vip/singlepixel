@@ -59,16 +59,16 @@ maven_jar(name = "net_lingala_zip4j_zip4j", artifact = "net.lingala.zip4j:zip4j:
 
 # multikinect dependencies end
 
-# singlepixellocalization dependencies start
+# singlepixel dependencies start
 
 maven_jar(name = "org_eclipse_paho_org_eclipse_paho_client_mqttv3", artifact = "org.eclipse.paho:org.eclipse.paho.client.mqttv3:jar:1.1.0")
 
-# singlepixellocalization dependencies end
+# singlepixel dependencies end
 
 git_repository(
     name = "multikinect",
     remote = "https://github.com/bu-vip/multikinect.git",
-    commit = "a508d5f07a8d2f22f6c7316b4fc9be30f6a2518f"
+    commit = "eb7dcd44ae0cb2f17c7f5c4620a00af75983f3b6"
 )
 
 http_jar(
@@ -92,10 +92,10 @@ git_repository(
 # proto build rules
 git_repository(
   name = "org_pubref_rules_protobuf",
-#  remote = "https://github.com/pubref/rules_protobuf",
-  remote = "https://github.com/Dig-Doug/rules_protobuf",
-  commit = "546aafeb6afc03a59cc805d748e7fdeeda1f0455",
-#  tag = "v0.7.1",
+  #remote = "https://github.com/pubref/rules_protobuf",
+  remote = "https://github.com/Dig-Doug/rules_protobuf.git",
+  #tag = "v0.7.1",
+  commit = "c878685946d25df2e8644b58978bd02139f92784"
 )
 
 # Load Java protobuf rules

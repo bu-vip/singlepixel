@@ -4,7 +4,6 @@ import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.bu.vip.multikinect.controller.plugin.Plugin;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
-import java.util.Objects;
 import java.util.function.Consumer;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;

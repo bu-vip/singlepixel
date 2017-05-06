@@ -58,7 +58,7 @@ def _calculate_ntp_time_of_frame(synced_frame, camera_readings, camera_indexes):
   return synced_ntp_time
 
 
-def combine_data(recording_dir, num_sensors):
+def combine_data(recording_dir, num_sensors, all_sensors_must_change):
   # Read the sensor readings
   sp_file = os.path.join(recording_dir, "plugins", "singlepixel.pbdat")
   sp_all_readings = read_delimited_protos_file(SinglePixelSensorReading,
@@ -120,6 +120,10 @@ def combine_data(recording_dir, num_sensors):
         'sp': current_readings.copy(),
       }
       combined.append(new_point)
+
+      # If all readings must change for a new data point, clear readings dict
+      if all_sensors_must_change:
+        current_readings = {}
 
   return combined
 
