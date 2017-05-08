@@ -2,7 +2,6 @@ package edu.bu.vip.singlepixel.demo;
 
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import com.google.common.math.Stats;
 import edu.bu.vip.multikinect.Protos.Position;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
@@ -13,7 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +28,7 @@ public class LocalizationAlgorithm {
     private boolean backgroundSubtraction = true;
     private int numPastReadings = 1;
     private LocationPredictor predictor;
+    private boolean clearBufferOnPredict = false;
 
     public Builder() {
     }
@@ -59,14 +58,23 @@ public class LocalizationAlgorithm {
       return this;
     }
 
+    public Builder setClearBufferOnPredict(boolean clearBufferOnPredict) {
+      this.clearBufferOnPredict = clearBufferOnPredict;
+      return this;
+    }
+
     public LocalizationAlgorithm build() {
       if (numSensors < 0) {
         throw new RuntimeException("Num sensors not set");
       }
 
+      if (predictor == null) {
+        throw new RuntimeException("Predictor not set");
+      }
+
       return new LocalizationAlgorithm(numSensors, calcLuminance, backgroundSubtraction,
           numPastReadings,
-          predictor);
+          clearBufferOnPredict, predictor);
     }
   }
 
@@ -81,19 +89,20 @@ public class LocalizationAlgorithm {
   private final boolean calcLuminance;
   private final boolean backgroundSubtraction;
   private final int numPastReadings;
+  private final boolean clearBufferOnPredict;
   private final Map<String, List<SinglePixelSensorReading>> backgroundReadings = new HashMap<>();
   private final Map<String, List<Double>> backgroundReadingMeans = new HashMap<>();
   private final Map<String, EvictingQueue<SinglePixelSensorReading>> pastReadings = new HashMap<>();
-  private final Set<String> noBackgroundErrorSensors = Sets.newConcurrentHashSet();
   private final LocationPredictor predictor;
 
   private LocalizationAlgorithm(int numSensors, boolean calcLuminance,
       boolean backgroundSubtraction,
-      int numPastReadings, LocationPredictor predictor) {
+      int numPastReadings, boolean clearBufferOnPredict, LocationPredictor predictor) {
     this.numSensors = numSensors;
     this.calcLuminance = calcLuminance;
     this.backgroundSubtraction = backgroundSubtraction;
     this.numPastReadings = numPastReadings;
+    this.clearBufferOnPredict = clearBufferOnPredict;
     this.predictor = predictor;
   }
 
@@ -164,6 +173,64 @@ public class LocalizationAlgorithm {
   }
 
   /**
+   * Checks if the algorithm is ready to predict. Checks if we have data from all sensors, enough
+   * readings per sensor (aka. time), and background readings.
+   */
+  public boolean canPredict() {
+    return canPredict(false);
+  }
+
+  private boolean canPredict(boolean logError) {
+    return haveDataFromAllSensors(logError) &&
+        haveEnoughDataPerSensor(logError) &&
+        haveBackgroundValues(logError);
+  }
+
+  private boolean haveDataFromAllSensors(boolean logError) {
+    // Check that we have data from all sensors
+    if (pastReadings.size() != numSensors) {
+      if (logError) {
+        logger.warn("Missing data from sensor");
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean haveEnoughDataPerSensor(boolean logError) {
+    // Check that we have enough data from each sensor
+    for (String key : pastReadings.keySet()) {
+      if (pastReadings.get(key).size() < numPastReadings) {
+        if (logError) {
+          logger.warn("Not enough data for sensor: {}", key);
+        }
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private boolean haveBackgroundValues(boolean logError) {
+    // Check for background readings
+    if (backgroundSubtraction) {
+      for (String key : pastReadings.keySet()) {
+        List<Double> means = backgroundReadingMeans.get(key);
+        int requiredBackground = (calcLuminance ? 1 : NUM_CHANNELS);
+        if (means == null || means.size() != requiredBackground) {
+          if (logError) {
+            logger.warn("No background data for sensor: {}", key);
+          }
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Creates the feature vector, passes it to the predictor, and then returns the result.
    *
    * The feature vector is created using the following procedure:
@@ -183,18 +250,10 @@ public class LocalizationAlgorithm {
    * </ol>
    */
   public ImmutableList<Position> predict() {
-    // Check that we have data from all sensors
-    if (pastReadings.size() != numSensors) {
-      logger.warn("Can't predict, invalid number of sensor data");
+    // Check we have all data needed to predict
+    if (!canPredict(true)) {
+      logger.warn("Not ready to predict");
       return ImmutableList.of();
-    }
-
-    // Check that we have enough data from each sensor
-    for (String key : pastReadings.keySet()) {
-      if (pastReadings.get(key).size() < numPastReadings) {
-        logger.warn("Not enough data for sensor: {}", key);
-        return ImmutableList.of();
-      }
     }
 
     // Order sensor keys
@@ -210,19 +269,6 @@ public class LocalizationAlgorithm {
 
       // Get the background means
       List<Double> means = backgroundReadingMeans.get(sensorKey);
-      // Check that background data has been set
-      if (backgroundSubtraction) {
-        int requiredBackground = (calcLuminance ? 1 : NUM_CHANNELS);
-        if (means == null || means.size() != requiredBackground) {
-          // Only print the error once
-          if (!noBackgroundErrorSensors.contains(sensorKey)) {
-            logger.warn("No background data for sensor: {} - This error will only appear once",
-                sensorKey);
-            noBackgroundErrorSensors.add(sensorKey);
-          }
-          return ImmutableList.of();
-        }
-      }
 
       // Build feature vector by going through all past readings, oldest first
       Collection<SinglePixelSensorReading> sensorReadings = pastReadings.get(sensorKey);
@@ -250,6 +296,11 @@ public class LocalizationAlgorithm {
           featureIndex++;
         }
       }
+    }
+
+    if (clearBufferOnPredict) {
+      // Clear the buffer
+      pastReadings.clear();
     }
 
     ImmutableList<Position> positions = predictor.predict(featureArray);

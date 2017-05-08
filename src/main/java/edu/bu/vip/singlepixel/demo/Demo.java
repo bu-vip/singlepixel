@@ -82,6 +82,7 @@ public class Demo implements MqttCallback {
         .setNumPastReadings(1)
         .setPredictor(predictor)
         .setNumSensors(11)
+        .setClearBufferOnPredict(true)
         .build();
 
     // Connect to mqtt
@@ -227,9 +228,11 @@ public class Demo implements MqttCallback {
           algorithm.addReading(reading);
 
           // Run algorithm
-          ImmutableList<Position> positions = algorithm.predict();
-          synchronized (estOccupantLock) {
-            estOccupantList = ImmutableList.copyOf(positions);
+          if (algorithm.canPredict()) {
+            ImmutableList<Position> positions = algorithm.predict();
+            synchronized (estOccupantLock) {
+              estOccupantList = ImmutableList.copyOf(positions);
+            }
           }
 
           synchronized (recordingLock) {

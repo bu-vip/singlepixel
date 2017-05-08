@@ -126,13 +126,12 @@ def combine_clips(clips, average_size, sensor_raw, background):
 def v2_test():
   print("V2 test")
 
-  name = "all_change_2"
+  name = "new_sensors"
 
   model_dir = "/home/doug/Desktop/multikinect/models/"
   session_dir = "/home/doug/Desktop/multikinect/sessions/"
   session_ids = [
-    "271320373",
-    "612073570"
+    "1937777040",
   ]
 
   recording_blacklist = [

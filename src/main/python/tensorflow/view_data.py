@@ -13,20 +13,9 @@ def test():
   import matplotlib.pyplot as plt
 
   session_dirs = [
-    "/home/doug/Desktop/singlepixel/sessions/",
-    "/home/doug/Desktop/singlepixel/sessions/",
-    "/home/doug/Desktop/singlepixel/sessions/",
-    "/home/doug/Desktop/singlepixel/sessions/",
-    "/home/doug/Desktop/multikinect/sessions/",
     "/home/doug/Desktop/multikinect/sessions/",
     ]
   session_ids = [
-    "31173029",
-    "436310705",
-    "539493861",
-    "998797274",
-    "271320373",
-    "612073570",
   ]
 
   recording_whitelist = [
