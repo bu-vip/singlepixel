@@ -131,14 +131,14 @@ def v2_test():
   model_dir = "/home/doug/Desktop/multikinect/models/"
   session_dir = "/home/doug/Desktop/multikinect/sessions/"
   session_ids = [
-    "1937777040",
+    "446778253",
   ]
 
   recording_blacklist = [
 
   ]
 
-  num_sensors = 11
+  num_sensors = 12
   average_size = 0
   sensor_raw = True
   background_sub = True
@@ -157,7 +157,7 @@ def v2_test():
   hash_string += str(all_readings_must_change)
   hash_string += str(hidden_layers)
   hash_string += str(num_epochs)
-  cache_key = hashlib.sha256(hash_string.encode("utf8")).hexdigest()
+  cache_key = hashlib.sha256(hash_string.encode("utf8")).hexdigest()[0:6]
 
   name += "_" + cache_key
   print("Name", name)

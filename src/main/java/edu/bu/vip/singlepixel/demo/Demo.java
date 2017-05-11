@@ -12,6 +12,7 @@ import edu.bu.vip.multikinect.sync.SkeletonUtils;
 import edu.bu.vip.singlepixel.Protos.SinglePixelSensorReading;
 import edu.bu.vip.singlepixel.demo.Protos.Bounds;
 import edu.bu.vip.singlepixel.demo.Protos.Occupant;
+import edu.bu.vip.singlepixel.filter.OccupantKalmanFilter;
 import edu.bu.vip.singlepixel.tensorflow.TensorFlowLocationPredictor;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Demo implements MqttCallback {
+  // Time to capture background, in milliseconds
+  private static final int BACKGROUND_CAPTURE_TIME = 30000;
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final String modelPath;
@@ -54,9 +57,12 @@ public class Demo implements MqttCallback {
   private FileOutputStream stream;
 
   private final Object estOccupantLock = new Object();
-  private ImmutableList<Position> estOccupantList;
+  private ImmutableList<Position> estOccupantList = ImmutableList.of();
   private final Object trueOccupantLock = new Object();
   private ImmutableList<Position> trueOccupants = ImmutableList.of();
+
+  private final OccupantKalmanFilter kalmanFilter = new OccupantKalmanFilter();
+  private final boolean applyKalman = false;
 
   public Demo(String modelPath, String recordingDir, String multiKinectDataDir, long calibrationId,
       String mqttBroker) {
@@ -81,7 +87,7 @@ public class Demo implements MqttCallback {
         .setCalcLuminance(false)
         .setNumPastReadings(1)
         .setPredictor(predictor)
-        .setNumSensors(11)
+        .setNumSensors(12)
         .setClearBufferOnPredict(true)
         .build();
 
@@ -152,10 +158,11 @@ public class Demo implements MqttCallback {
           @Override
           public void run() {
             synchronized (backgroundLock) {
+              logger.info("Finished background capture");
               capturingBackground = false;
             }
           }
-        }, 30000);
+        }, BACKGROUND_CAPTURE_TIME);
       } else {
         logger.info("Already capturing background");
       }
@@ -187,20 +194,26 @@ public class Demo implements MqttCallback {
   public List<Occupant> getOccupants() {
     synchronized (estOccupantLock) {
       synchronized (trueOccupantLock) {
-        Occupant.Builder builder = Occupant.newBuilder();
-        builder.setId(0);
         if (estOccupantList.size() > 0) {
-          builder.setEstimatedPosition(estOccupantList.get(0));
-        }
-        if (trueOccupants.size() > 0) {
-          builder.setTruePosition(trueOccupants.get(0));
-        }
-        builder.setDistance(PositionUtils.distanceXZ(
-            builder.getTruePosition(),
-            builder.getEstimatedPosition()
-        ));
+          Occupant.Builder builder = Occupant.newBuilder();
+          builder.setId(0);
 
-        return ImmutableList.of(builder.build());
+          Position orig = estOccupantList.get(0);
+          Position filtered = (applyKalman ? kalmanFilter.filter(builder.getId(), orig) : orig);
+
+          builder.setEstimatedPosition(filtered);
+          if (trueOccupants.size() > 0) {
+            builder.setTruePosition(trueOccupants.get(0));
+          }
+          builder.setDistance(PositionUtils.distanceXZ(
+              builder.getTruePosition(),
+              builder.getEstimatedPosition()
+          ));
+
+          return ImmutableList.of(builder.build());
+        }
+
+        return ImmutableList.of();
       }
     }
   }
@@ -246,6 +259,9 @@ public class Demo implements MqttCallback {
 
     } catch (InvalidProtocolBufferException ex) {
       // TODO(doug) - Log exception
+    }
+    catch (Exception e) {
+      logger.error("Error:", e);
     }
   }
 

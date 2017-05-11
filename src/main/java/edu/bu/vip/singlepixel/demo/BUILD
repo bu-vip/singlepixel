@@ -37,6 +37,7 @@ java_library(
         "//:com_google_protobuf_protobuf_java_util",
         "//:org_eclipse_paho_client_mqttv3",
         "//:org_slf4j_slf4j_api",
+        "//src/main/java/edu/bu/vip/singlepixel/filter:occupantkalmanfilter",
         "//src/main/java/edu/bu/vip/singlepixel/tensorflow:predictor",
         "//src/main/proto:demo_java",
         "//src/main/proto:singlepixel_java",

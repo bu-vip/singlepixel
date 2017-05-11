@@ -83,49 +83,52 @@ class App extends Component {
     }
 
     // Convert people into data points
-    let datasets = [].concat.apply([],
-        this.state.sensors.occupants.map((person) => {
-          const basePoint = {
-            showLine: false,
-            fill: false,
-            pointRadius: 20,
-            pointHoverRadius: 20,
-          };
+    let datasets = [];
+    if (this.state.sensors.occupants) {
+      datasets = [].concat.apply([],
+          this.state.sensors.occupants.map((person) => {
+            const basePoint = {
+              showLine: false,
+              fill: false,
+              pointRadius: 20,
+              pointHoverRadius: 20,
+            };
 
-          let result = [];
-          if (person.estimatedPosition) {
-            result.push(
-                {
-                  label: 'Person ' + person.id + " estimated",
-                  ...basePoint,
-                  pointBackgroundColor: 'rgba(200, 0, 0, 1)',
-                  data: [
-                    {
-                      x: person.estimatedPosition.x,
-                      y: person.estimatedPosition.z
-                    }
-                  ]
-                });
-          }
-          if (person.truePosition) {
-            result.push(
-                {
-                  label: 'Person ' + person.id + " true",
-                  ...basePoint,
-                  pointBackgroundColor: 'rgba(0, 0, 200, 1)',
-                  data: [
-                    {
-                      x: person.truePosition.x,
-                      y: person.truePosition.z
-                    }
-                  ]
-                }
-            );
-          }
+            let result = [];
+            if (person.estimatedPosition) {
+              result.push(
+                  {
+                    label: 'Person ' + person.id + " estimated",
+                    ...basePoint,
+                    pointBackgroundColor: 'rgba(200, 0, 0, 1)',
+                    data: [
+                      {
+                        x: person.estimatedPosition.x,
+                        y: person.estimatedPosition.z
+                      }
+                    ]
+                  });
+            }
+            if (person.truePosition) {
+              result.push(
+                  {
+                    label: 'Person ' + person.id + " true",
+                    ...basePoint,
+                    pointBackgroundColor: 'rgba(0, 0, 200, 1)',
+                    data: [
+                      {
+                        x: person.truePosition.x,
+                        y: person.truePosition.z
+                      }
+                    ]
+                  }
+              );
+            }
 
-          // Return two data sets, one for true and one for estimated
-          return result;
-        }));
+            // Return two data sets, one for true and one for estimated
+            return result;
+          }));
+    }
 
     let data = {
       datasets: datasets
