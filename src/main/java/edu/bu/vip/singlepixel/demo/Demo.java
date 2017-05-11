@@ -61,6 +61,7 @@ public class Demo implements MqttCallback {
   private final Object trueOccupantLock = new Object();
   private ImmutableList<Position> trueOccupants = ImmutableList.of();
 
+  // NOTE(doug): Kalman filter doesn't work. It isn't fully implemented.
   private final OccupantKalmanFilter kalmanFilter = new OccupantKalmanFilter();
   private final boolean applyKalman = false;
 

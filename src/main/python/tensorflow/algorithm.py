@@ -1,10 +1,10 @@
+import argparse
 import hashlib
 import json
 import os
 
 import matplotlib
 import numpy as np
-from numpy import genfromtxt
 
 from src.main.python.tensorflow.feature import combined_to_features
 
@@ -25,52 +25,6 @@ def calc_distance(actual, predicted):
   distances = np.mean(diff, axis=0)
 
   return distance, distances, sqrt
-
-
-def walk_to_features(walk):
-  labels = walk[:, 0:2]
-  data = walk[:, 2:]
-  return labels, data
-
-
-def walks_to_feature(walks):
-  all_labels, all_data = walk_to_features(walks[0])
-  for walk in walks[1:]:
-    labels, data = walk_to_features(walk)
-    np.append(all_labels, labels, axis=0)
-    np.append(all_data, data, axis=0)
-
-  return all_labels, all_data
-
-
-def walks_test():
-  print("Walk test")
-  # Load data
-  root_dir = "../../resources/datav1/track5"
-  people = ['dan', 'doug', 'jiawei', 'pablo']
-  data = []
-  for person in people:
-    walks = []
-    for file in os.listdir(root_dir + "/" + person):
-      if file.endswith(".csv"):
-        full_path = root_dir + "/" + person + "/" + file
-        walk_data = genfromtxt(full_path, delimiter=',', skip_header=1)
-        walks.append(walk_data)
-    data.append(walks)
-
-  training_walks = data[0] + data[1]
-  testing_walks = data[2] + data[3]
-
-  # Convert data to features
-  train_labels, train_data = walks_to_feature(training_walks)
-  test_labels, test_data = walks_to_feature(testing_walks)
-
-  regressor = Regressor(len(train_data[0]), len(train_labels[0]),
-                        [100, 100, 100])
-  accuracy, predictions = regressor.train(train_labels, train_data, test_labels,
-                                          test_data)
-
-  print(accuracy)
 
 
 def graph_point_distribution(labels, save_file=None):
@@ -123,29 +77,17 @@ def combine_clips(clips, average_size, sensor_raw, background):
   return all_labels, all_data
 
 
-def v2_test():
-  print("V2 test")
-
-  name = "new_sensors"
-
-  model_dir = "/home/doug/Desktop/multikinect/models/"
-  session_dir = "/home/doug/Desktop/multikinect/sessions/"
-  session_ids = [
-    "446778253",
-  ]
-
+def train_model(model_name, model_dir, session_dir, session_ids, num_sensors,
+    num_epochs):
   recording_blacklist = [
 
   ]
 
-  num_sensors = 12
   average_size = 0
   sensor_raw = True
   background_sub = True
   all_readings_must_change = True
   hidden_layers = [100, 100, 100]
-  num_epochs = 10000
-
 
   hash_string = ""
   for session_id in session_ids:
@@ -159,8 +101,8 @@ def v2_test():
   hash_string += str(num_epochs)
   cache_key = hashlib.sha256(hash_string.encode("utf8")).hexdigest()[0:6]
 
-  name += "_" + cache_key
-  print("Name", name)
+  model_name += "_" + cache_key
+  print("Name", model_name)
 
   all_labels = None
   all_data = None
@@ -232,7 +174,7 @@ def v2_test():
   train_labels = all_labels[:middle]
   test_labels = all_labels[middle:]
 
-  save_model_file = os.path.join(model_dir, name + "_model.pb")
+  save_model_file = os.path.join(model_dir, model_name + "_model.pb")
 
   regressor = Regressor(len(all_data[0]), len(all_labels[0]), hidden_layers)
 
@@ -244,7 +186,7 @@ def v2_test():
   distance, distances, indv_distances = calc_distance(test_labels, predictions)
   print(accuracy, distances)
 
-  stats_file = os.path.join(model_dir, name + "_stats.txt")
+  stats_file = os.path.join(model_dir, model_name + "_stats.txt")
   with open(stats_file, 'w') as file:
     stats = {
       'accuracy': str(accuracy),
@@ -271,12 +213,60 @@ def v2_test():
   plt.plot(indv_distances, 'g')
   plt.ylabel("Distance Error (m)")
 
-  error_graph = os.path.join(model_dir, name + "_graph_error.png")
+  error_graph = os.path.join(model_dir, model_name + "_graph_error.png")
   error_fig.savefig(error_graph)
 
   # Plot point distribution
-  distrib_graph = os.path.join(model_dir, name + "_graph_point_distrib.png")
+  distrib_graph = os.path.join(model_dir,
+                               model_name + "_graph_point_distrib.png")
   graph_point_distribution(all_labels, save_file=distrib_graph)
 
 
-v2_test()
+def main():
+  parser = argparse.ArgumentParser(description='Train the NN')
+
+  parser.add_argument('--model_name',
+                      action="store",
+                      dest='model_name',
+                      help='Name of the model',
+                      required=True)
+  parser.add_argument('--out_dir',
+                      action="store",
+                      dest='out_dir',
+                      help='Path to write output files',
+                      required=True)
+  parser.add_argument('--session_dir',
+                      action="store",
+                      dest='session_dir',
+                      help='Location of data to train on',
+                      required=True)
+  parser.add_argument('--num_sensors',
+                      action="store",
+                      dest="num_sensors",
+                      type=int,
+                      help='Number of sensors',
+                      required=True)
+  parser.add_argument('--ids',
+                      nargs='+',
+                      dest='ids',
+                      help='Session ids',
+                      required=True)
+  parser.add_argument('--epochs',
+                      action="store",
+                      dest="epochs",
+                      default=10000,
+                      type=int,
+                      help='Number of sensors')
+
+  args = parser.parse_args()
+
+  train_model(model_name=args.model_name,
+              model_dir=args.out_dir,
+              session_dir=args.session_dir,
+              session_ids=args.ids,
+              num_sensors=args.num_sensors,
+              num_epochs=args.epochs)
+
+
+if __name__ == "__main__":
+  main()
