@@ -3,7 +3,7 @@ Single pixel sensor localization demo.
 
 ## Data Collection
 Before you can run the demo, you'll need to collect some data to train the model.
-Follow the instructions [here](/src/main/java/edu/bu/vip/singlepixel/multikinect/README.md) to setup the MultiKinect system.
+Follow the instructions [here](/src/main/java/edu/bu/vip/singlepixel/multikinect) to setup the MultiKinect system.
 
 The current algorithm uses background subtraction, so you will need to capture at least one background sample in order for the algorithm to work properly.
 When you capture a background sample, there are two things you need to do:
@@ -62,7 +62,7 @@ If you would like to try a different ML algorithm (that uses the same feature ve
 You will need to implement the
 [LocationPreditor](/src/main/java/edu/bu/vip/singlepixel/demo/LocationPredictor.java)
 interface and then need to initialize it
-[here](/src/main/java/edu/bu/vip/singlepixel/demo/Demo.java#L72).
+[here](/src/main/java/edu/bu/vip/singlepixel/demo/Demo.java#L79).
 
 You'll probably also want to add a
 [command line arg](/src/main/java/edu/bu/vip/singlepixel/demo/MainArgs.java)
