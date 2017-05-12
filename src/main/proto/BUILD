@@ -30,3 +30,20 @@ py_proto_compile(
         "singlepixel.proto",
     ],
 )
+
+java_proto_library(
+    name = "demo_java",
+    imports = [
+        "external/",
+        "external/com_github_google_protobuf/src/",
+    ],
+    inputs = [
+        "@com_github_google_protobuf//:well_known_protos",
+    ],
+    proto_deps = [
+        "@multikinect//src/main/proto:frame",
+    ],
+    protos = [
+        "demo.proto",
+    ],
+)

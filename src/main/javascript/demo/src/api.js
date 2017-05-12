@@ -22,3 +22,13 @@ export function sendGetStateRequest() {
   .then(checkHttpResponseStatus)
   .then(response => response.json());
 }
+
+export function sendBackgroundRequest() {
+  return fetch("http://localhost:8080/_/background")
+  .then(checkHttpResponseStatus)
+}
+
+export function sendToggleRecordingRequest() {
+  return fetch("http://localhost:8080/_/record")
+  .then(checkHttpResponseStatus)
+}

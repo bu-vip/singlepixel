@@ -12,13 +12,12 @@ public class Main implements MqttCallback {
 
   public static void main(String[] args) throws Exception {
     Main main = new Main();
-    main.test2();
 
     MatlabMqtt test = new MatlabMqtt("", "tcp://localhost:1883", 1);
     test.start();
     while (true) {
       test.getReadings().forEach((key, reading) -> {
-        if (reading.get(0).getClear() > 0.5) {
+        if (reading.get(0).getClear() > 0.7) {
           System.out.println(key);
         }
       });
@@ -54,7 +53,6 @@ public class Main implements MqttCallback {
   }
 
   public void messageArrived(String aTopic, MqttMessage message) throws Exception {
-    System.out.println(aTopic);
   }
 
   public void deliveryComplete(IMqttDeliveryToken arg0) {

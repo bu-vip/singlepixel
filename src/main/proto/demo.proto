@@ -1,0 +1,30 @@
+syntax = 'proto3';
+
+import "google/protobuf/timestamp.proto";
+import "multikinect/src/main/proto/frame.proto";
+
+package bu.vip.singlepixel.demo;
+
+option java_package = "edu.bu.vip.singlepixel.demo";
+option java_outer_classname = "Protos";
+
+message Status {
+  repeated Occupant occupants = 1;
+  bool recording = 2;
+  bool capturing_background = 3;
+  Bounds bounds = 4;
+}
+
+message Occupant {
+  int64 id = 1;
+  bu.vip.multikinect.Position estimated_position = 2;
+  bu.vip.multikinect.Position true_position = 3;
+  double distance = 4;
+}
+
+message Bounds {
+  double minX = 1;
+  double maxX = 2;
+  double minZ = 3;
+  double maxZ = 4;
+}
