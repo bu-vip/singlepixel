@@ -48,3 +48,10 @@ status = os.system(cp_command)
 if status != 0:
   print("An error occurred copying the generated files...")
   sys.exit(1)
+
+update_import_command = 'sed -i srcgen/realtime_pb2.py -e "s/src\.main\.proto/srcgen/"'
+print("Executing: ", update_import_command)
+status = os.system(update_import_command)
+if status != 0:
+  print("An error occured updating imports...")
+  sys.exit(1)
