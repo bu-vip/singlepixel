@@ -14,13 +14,16 @@ The NN training script expects the background recording to have "background" in 
 
 ## Training the NN
 Once you have collected some data, the next step is to train the NN model.
-The script for training the model is [here](/src/main/python/tensorflow/algorithm.py).
+The script for training the model is [here](/src/main/python/tensorflow/train_nn.py).
 You'll need to install some python libraries to run the script: tensorflow, matplotlib, numpy (there may be more)
+
+Generate the protobuf files using these
+[instructions](/src/main/python/tensorflow/README.md).
 
 To run the script, you'll need to specify some parameters:
 ```bash
-python algorithm.py \
-  --model_name <model-name> \
+python train_nn.py \
+  --out_model_name <model-name> \
   --out_dir <out-dir, e.g. "/home/doug/Desktop/multikinect/models"> \
   --session_dir <session-dir, e.g. "/home/doug/Desktop/multikinect/sessions"> \
   --num_sensors <num-sensors, e.g. 12> \

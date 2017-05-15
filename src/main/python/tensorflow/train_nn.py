@@ -225,20 +225,22 @@ def train_model(model_name, model_dir, session_dir, session_ids, num_sensors,
 def main():
   parser = argparse.ArgumentParser(description='Train the NN')
 
-  parser.add_argument('--model_name',
+  parser.add_argument('--out_model_name',
                       action="store",
-                      dest='model_name',
-                      help='Name of the model',
+                      dest='out_model_name',
+                      help='''Name of the output model. NOTE: A hash of the 
+                      training parameters will be appended to the end of the 
+                      name.''',
                       required=True)
   parser.add_argument('--out_dir',
                       action="store",
                       dest='out_dir',
-                      help='Path to write output files',
+                      help='Path to write output files and model checkpoints',
                       required=True)
   parser.add_argument('--session_dir',
                       action="store",
                       dest='session_dir',
-                      help='Location of data to train on',
+                      help='Location of data to use for training',
                       required=True)
   parser.add_argument('--num_sensors',
                       action="store",
@@ -256,11 +258,11 @@ def main():
                       dest="epochs",
                       default=10000,
                       type=int,
-                      help='Number of sensors')
+                      help='Number of epochs')
 
   args = parser.parse_args()
 
-  train_model(model_name=args.model_name,
+  train_model(model_name=args.out_model_name,
               model_dir=args.out_dir,
               session_dir=args.session_dir,
               session_ids=args.ids,
