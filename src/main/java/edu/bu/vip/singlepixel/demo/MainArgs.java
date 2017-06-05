@@ -19,6 +19,11 @@ public class MainArgs {
       required = true)
   private String modelFile;
 
+  @Parameter(names = {"--num_sensors"},
+      description = "number of sensors",
+      required = true)
+  private String numSensors;
+
   @Parameter(names = {"--calibration_id"},
       description = "MultiKinect calibration id",
       required = true)
@@ -43,6 +48,10 @@ public class MainArgs {
 
   public String getModelFile() {
     return modelFile;
+  }
+
+  public int getNumSensors() {
+    return Integer.decode(numSensors);
   }
 
   public long getCalibrationId() {

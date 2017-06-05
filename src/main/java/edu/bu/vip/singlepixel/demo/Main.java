@@ -23,7 +23,7 @@ public class Main {
           mainArgs.getCalibrationId(),
           mainArgs.getMqttHost()
       );
-      demo.start();
+      demo.start(mainArgs.getNumSensors());
 
       WebConsole console = new WebConsole(demo);
       console.start();

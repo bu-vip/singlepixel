@@ -46,6 +46,7 @@ bazel run //src/main/java/edu/bu/vip/singlepixel/demo:main \
   --multikinect_dir <dir, e.g. "/home/doug/Desktop/multikinect"> \
   --model <model-file, e.g. "/home/doug/models/my_model_1has13.pb"> \
   --recordings_dir <recordings-dir, e.g. "/home/doug/Desktop/demo_recordings"> \
+  --num_sensors <num-sensors, e.g. 12> \
   --calibration_id <id, e.g. 471923155>
 ```
 > The calibration id you specify should match the one you used to collect the data.

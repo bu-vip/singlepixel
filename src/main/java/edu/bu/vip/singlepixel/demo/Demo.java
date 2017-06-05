@@ -74,7 +74,7 @@ public class Demo implements MqttCallback {
     this.mqttBroker = mqttBroker;
   }
 
-  public void start() throws Exception {
+  public void start(int num_sensors) throws Exception {
     // Create predictor
     LocationPredictor predictor = TensorFlowLocationPredictor.builder()
         .setInputNodeName("input")
@@ -88,7 +88,7 @@ public class Demo implements MqttCallback {
         .setCalcLuminance(false)
         .setNumPastReadings(1)
         .setPredictor(predictor)
-        .setNumSensors(12)
+        .setNumSensors(num_sensors)
         .setClearBufferOnPredict(true)
         .build();
 
