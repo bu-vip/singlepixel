@@ -33,9 +33,14 @@ if status != 0:
   sys.exit(1)
 
 if os.path.exists("srcgen"):
-  status = os.system("rm -r srcgen")
+  user_input = input("Are you sure you want to get rid of old generated protobuf files? (Y/n)")
+  accept_answers = ["", "Y", "y"]
+  if user_input not in accept_answers:
+    print("Generating of protobuf files aborted")
+    sys.exit(1)
+  status = os.system("rm -rf srcgen")
   if status != 0:
-    print("An error occurred deleteing old generated files...")
+    print("An error occurred deleting old generated files...")
     sys.exit(1)
 
 cp_command = "mkdir -p srcgen"
