@@ -27,9 +27,12 @@ class Regressor():
                 self._create_hidden_layer(last_dim, hidden_layer_dim)
                 last_dim = hidden_layer_dim
 
+            # Set seed for random generator so that the network is deterministic for a given set of parameters
+            tf.set_random_seed(1234)
+
             # Create output layer
-            self.weights.append(tf.Variable(tf.random_normal([last_dim, self.out_dim])))
-            self.biases.append(tf.Variable(tf.random_normal([self.out_dim])))
+            self.weights.append(tf.Variable(tf.random_normal([last_dim, self.out_dim],seed=1)))
+            self.biases.append(tf.Variable(tf.random_normal([self.out_dim], seed=1)))
             self.output_layer = tf.add(tf.matmul(self.layers[-1], self.weights[-1]), self.biases[-1], name="output")
 
             # Define cost
@@ -43,8 +46,8 @@ class Regressor():
 
     def _create_hidden_layer(self, prev_layer_dim, layer_dim):
         # Add layer weights and biases
-        self.weights.append(tf.Variable(tf.random_normal([prev_layer_dim, layer_dim])))
-        self.biases.append(tf.Variable(tf.random_normal([layer_dim])))
+        self.weights.append(tf.Variable(tf.random_normal([prev_layer_dim, layer_dim], seed=1)))
+        self.biases.append(tf.Variable(tf.random_normal([layer_dim], seed=1)))
 
         # Calculate the weighted sum of inputs and biases
         layer_input = self.layers[-1]
@@ -54,6 +57,7 @@ class Regressor():
 
     def _create_batches(self, labels, data, size):
         indices = list(range(len(labels)))
+        random.seed(10)
         random.shuffle(indices)
         label_batches = []
         data_batches = []
@@ -71,6 +75,7 @@ class Regressor():
         return np.array(label_batches), np.array(data_batches)
 
     def train(self, train_labels, train_data, test_labels, test_data, batch_size=100, epochs=1000, save_model=None):
+
         with tf.Session(graph=self.graph) as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
